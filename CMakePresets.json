@@ -1,0 +1,21 @@
+﻿{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "windows-clang-release",
+      "generator": "Ninja",
+      "binaryDir": "build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "clang-cl.exe",
+        "CMAKE_CXX_COMPILER": "clang-cl.exe"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "clang-release",
+      "configurePreset": "windows-clang-release"
+    }
+  ]
+}

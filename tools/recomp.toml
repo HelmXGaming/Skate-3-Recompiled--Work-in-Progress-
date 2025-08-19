@@ -1,0 +1,4 @@
+﻿[main]
+file_path = "../game/default.xex"
+out_directory_path = "../ppc"
+switch_table_file_path = "./skate3_switches.toml"
