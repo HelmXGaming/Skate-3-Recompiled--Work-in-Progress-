@@ -1,4 +1,5 @@
 #include "game_boot.h"
+#include "recomp_bridge.h"
 
 #include "../hal/fs.h"
 #include "../hal/sys.h"
@@ -499,6 +500,26 @@ BootResult LaunchFromContentRoot(const std::string& content_root)
 
     message << "\n\nXEX image loaded into guest memory. Next step is linking generated PPC code and starting a guest thread at "
         << hex32(result.entry_point) << ".";
+
+    uint32_t function_table_start = 0;
+    uint32_t function_table_size = 0;
+    if (GetGeneratedFunctionTableRange(function_table_start, function_table_size)) {
+        constexpr uint32_t stack_base = 0x70000000;
+        constexpr uint32_t stack_size = 0x00100000;
+        constexpr uint32_t stack_top = stack_base + stack_size - 0x100;
+
+        if (!guest.commit(function_table_start, function_table_size)) {
+            message << "\n\nGenerated PPC is linked, but the runtime could not commit the function lookup table.";
+        } else if (!guest.commit(stack_base, stack_size)) {
+            message << "\n\nGenerated PPC is linked, but the runtime could not commit the initial guest stack.";
+        } else {
+            RecompEntryResult entry_result = TryEnterGeneratedGuest(result.entry_point, guest.base, stack_top);
+            message << "\n\n" << entry_result.message;
+        }
+    } else {
+        RecompEntryResult entry_result = TryEnterGeneratedGuest(result.entry_point, guest.base, 0);
+        message << "\n\n" << entry_result.message;
+    }
 
     result.message = message.str();
     result.ok = true;

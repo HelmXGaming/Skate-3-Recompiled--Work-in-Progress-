@@ -1,5 +1,6 @@
 add_library(runtime STATIC
   boot/game_boot.cpp
+  boot/recomp_bridge.cpp
   hal/fs.cpp
   hal/mem.cpp
   hal/sys.cpp
@@ -16,3 +17,12 @@ target_include_directories(runtime PRIVATE
 )
 
 target_compile_definitions(runtime PRIVATE NOMINMAX)
+
+if (SKATE3_ENABLE_RECOMP_LIB)
+  target_compile_definitions(runtime PUBLIC SKATE3_HAS_RECOMP_LIB=1)
+  target_include_directories(runtime PRIVATE
+    ${CMAKE_SOURCE_DIR}/Skate3RecompLib/include
+    ${CMAKE_SOURCE_DIR}/generated/ppc
+    ${CMAKE_SOURCE_DIR}/third_party/XenonRecomp/thirdparty/simde
+  )
+endif()
