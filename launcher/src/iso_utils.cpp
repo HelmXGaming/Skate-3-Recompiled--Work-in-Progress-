@@ -12,9 +12,32 @@ static bool is_iso_path(const std::string& p) {
 }
 
 static std::string tool_extract_xiso() {
-    // Expected at ./tools/bin/extract-xiso.exe
-    fs::path p = fs::absolute(".") / "tools" / "bin" / "extract-xiso.exe";
-    if (fs::exists(p)) return p.string();
+    auto find_from = [](fs::path start)->std::string {
+        std::error_code ec;
+        start = fs::absolute(start, ec);
+        if (ec) return {};
+
+        for (int i = 0; i < 8 && !start.empty(); ++i) {
+            fs::path candidate = start / "tools" / "bin" / "extract-xiso.exe";
+            if (fs::exists(candidate) && fs::is_regular_file(candidate)) {
+                return candidate.string();
+            }
+
+            fs::path parent = start.parent_path();
+            if (parent == start) break;
+            start = parent;
+        }
+
+        return {};
+        };
+
+    if (auto p = find_from(fs::current_path()); !p.empty()) return p;
+
+    char exe_buf[MAX_PATH]{};
+    if (GetModuleFileNameA(nullptr, exe_buf, MAX_PATH)) {
+        if (auto p = find_from(fs::path(exe_buf).parent_path()); !p.empty()) return p;
+    }
+
     return {};
 }
 
@@ -56,7 +79,7 @@ std::string ExtractIsoIfNeeded(const std::string& sourceRootOrIso,
 
     auto tool = tool_extract_xiso();
     if (tool.empty()) {
-        failReason = "tools/bin/extract-xiso.exe not found.";
+        failReason = "tools/bin/extract-xiso.exe not found near the launcher or repository root.";
         return {};
     }
 
