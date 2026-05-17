@@ -1,0 +1,14 @@
+[main]
+file_path = "../../game/default.xex"
+out_directory_path = "../../generated/ppc"
+switch_table_file_path = "skate3_switches.toml"
+
+# Keep optimizations disabled until the generated code can boot under a runtime.
+skip_lr = false
+skip_msr = false
+ctr_as_local = false
+xer_as_local = false
+reserved_as_local = false
+cr_as_local = false
+non_argument_as_local = false
+non_volatile_as_local = false
