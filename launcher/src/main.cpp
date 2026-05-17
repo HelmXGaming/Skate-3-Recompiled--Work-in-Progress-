@@ -9,6 +9,7 @@
 
 #include "../../runtime/hal/fs.h"
 #include "../../runtime/hal/sys.h"
+#include "../../runtime/boot/game_boot.h"
 
 #include "asset_locator.h"
 #include "importer.h"
@@ -230,6 +231,21 @@ static bool ValidateAndImport(HWND hwnd) {
     return true;
 }
 
+static void LaunchGame(HWND hwnd) {
+    if (!ValidateAndImport(hwnd)) return;
+
+    g_app.status = "Launching runtime...";
+    InvalidateRect(hwnd, nullptr, FALSE);
+    UpdateWindow(hwnd);
+
+    auto boot = runtime::boot::LaunchFromContentRoot(g_app.content_root);
+    g_app.status = boot.ok ? "Boot reached runtime." : "Boot failed.";
+    InvalidateRect(hwnd, nullptr, FALSE);
+
+    UINT icon = boot.ok ? MB_ICONINFORMATION : MB_ICONERROR;
+    MessageBoxA(hwnd, boot.message.c_str(), "Skate 3 Recomp Boot", MB_OK | icon);
+}
+
 static Action HitTestMain(int x, int y) {
     Point p(x, y);
     if (g_app.play_rect.Contains(p)) return Action::Play;
@@ -423,9 +439,7 @@ static void PaintLauncher(HWND hwnd) {
 static void ClickAction(HWND hwnd, Action action) {
     switch (action) {
     case Action::Play:
-        if (ValidateAndImport(hwnd)) {
-            MessageBoxA(hwnd, "Game boot is not wired yet, but assets are ready.", "Skate 3 Recomp Launcher", MB_OK | MB_ICONINFORMATION);
-        }
+        LaunchGame(hwnd);
         break;
     case Action::Settings:
         g_app.screen = Screen::Settings;

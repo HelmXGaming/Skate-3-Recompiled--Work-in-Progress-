@@ -9,15 +9,19 @@ set "XENON_BUILD=%ROOT%\build-xenonrecomp-msvc"
 set "ANALYSE_EXE=%XENON_BUILD%\XenonAnalyse\Release\XenonAnalyse.exe"
 set "RECOMP_EXE=%XENON_BUILD%\XenonRecomp\Release\XenonRecomp.exe"
 set "XEX=%ROOT%\game\default.xex"
+if not exist "%XEX%" (
+  if exist "%ROOT%\cache\Skate3\iso_extracted\default.xex" set "XEX=%ROOT%\cache\Skate3\iso_extracted\default.xex"
+)
 set "CONFIG=%ROOT%\Skate3RecompLib\config\skate3.toml"
+set "CONFIG_EFFECTIVE=%ROOT%\generated\analysis\skate3.effective.toml"
 set "SWITCHES=%ROOT%\Skate3RecompLib\config\skate3_switches.toml"
 set "PPC_HEADER=%XENON_SRC%\XenonUtils\ppc_context.h"
 set "PATCH=%ROOT%\docs\patches\xenonrecomp-msvc-toolchain.patch"
 set "PATCH_APPLIED=0"
 
 if not exist "%XEX%" (
-  echo [recomp] Missing %XEX%
-  echo [recomp] Put an extracted Skate 3 dump in game\ with default.xex first.
+  echo [recomp] Missing default.xex.
+  echo [recomp] Put an extracted Skate 3 dump in game\ or import an ISO through the launcher first.
   goto :fail
 )
 
@@ -42,12 +46,31 @@ if errorlevel 1 goto :fail
 if not exist "%ROOT%\generated\analysis" mkdir "%ROOT%\generated\analysis"
 if not exist "%ROOT%\generated\ppc" mkdir "%ROOT%\generated\ppc"
 
+set "XEX_TOML=%XEX:\=/%"
+set "OUT_TOML=%ROOT:\=/%/generated/ppc"
+set "SWITCHES_TOML=%SWITCHES:\=/%"
+(
+  echo [main]
+  echo file_path = "%XEX_TOML%"
+  echo out_directory_path = "%OUT_TOML%"
+  echo switch_table_file_path = "%SWITCHES_TOML%"
+  echo.
+  echo skip_lr = false
+  echo skip_msr = false
+  echo ctr_as_local = false
+  echo xer_as_local = false
+  echo reserved_as_local = false
+  echo cr_as_local = false
+  echo non_argument_as_local = false
+  echo non_volatile_as_local = false
+) > "%CONFIG_EFFECTIVE%"
+
 echo [recomp] Analysing switch tables...
 "%ANALYSE_EXE%" "%XEX%" "%SWITCHES%"
 if errorlevel 1 goto :fail
 
 echo [recomp] Recompiling PPC code...
-"%RECOMP_EXE%" "%CONFIG%" "%PPC_HEADER%"
+"%RECOMP_EXE%" "%CONFIG_EFFECTIVE%" "%PPC_HEADER%"
 if errorlevel 1 goto :fail
 
 echo.

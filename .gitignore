@@ -29,6 +29,7 @@
 
 # Launcher cache
 /cache/
+/skate3_recomp.config.json
 
 # Crash dumps
 *.dmp
