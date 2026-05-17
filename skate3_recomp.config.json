@@ -1,5 +1,5 @@
 {
-  "game_root": "C:\\Users\\HelmXGaming\\Documents\\GitHub\\Skate-3-Recomp-PC\\game\\Skate3.iso",
+  "game_root": "C:\\Users\\HelmXGaming\\Documents\\GitHub\\Skate-3-Recomp-PC\\cache\\Skate3\\iso_extracted",
   "prefer_cache": true,
   "cache_dir": "./cache/Skate3",
   "apply_title_update": false,
