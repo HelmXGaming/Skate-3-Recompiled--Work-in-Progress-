@@ -12,7 +12,7 @@ This project is an early Skate 3 native Windows recompilation experiment using t
 - Validated files are copied into `cache/Skate3`.
 - `tools/run_recomp.bat` can build XenonRecomp tools, analyse `game/default.xex`, and generate raw PPC C++ into `generated/ppc`.
 - Generated recomp output is intentionally ignored by Git; rerun the tool when you need to refresh it.
-- Pressing Play now enters the runtime boot path after validation: it mounts cached content, reads `default.xex`, parses XEX metadata, reserves guest address space, and reports the current guest-entry blocker.
+- Pressing Play now enters the runtime boot path after validation: it mounts cached content, reads `default.xex`, parses XEX metadata, decrypts/decompresses the XEX image, reserves guest address space, and reports the current guest-entry blocker.
 - The build currently produces only `Skate3Launcher.exe`; guest execution will be wired behind the launcher once generated PPC code and import stubs are ready.
 
 ## Quick Start
@@ -59,7 +59,7 @@ cmake -S . -B build-recomp-test -G "Visual Studio 17 2022" -A x64 -DSKATE3_ENABL
 cmake --build build-recomp-test --config Release --target Skate3RecompLib
 ```
 
-This target is not part of the default launcher build yet. The current raw recomp pass still reports missing save/restore helper addresses and unsupported PPC instructions, so the generated code is scaffolding for runtime integration rather than bootable game code.
+This target is not part of the default launcher build yet. The runtime can now stage the XEX image, but the current raw recomp pass still reports missing save/restore helper addresses and unsupported PPC instructions, so generated PPC dispatch/import stubs are the next boot blockers.
 
 ## Layout
 

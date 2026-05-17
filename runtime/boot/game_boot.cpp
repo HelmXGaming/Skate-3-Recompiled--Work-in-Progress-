@@ -3,12 +3,23 @@
 #include "../hal/fs.h"
 #include "../hal/sys.h"
 
+#include <algorithm>
+#include <cassert>
+#include <climits>
+#include <cstdlib>
 #include <cstring>
 #include <iomanip>
+#include <memory>
 #include <sstream>
 #include <vector>
 
+#include <aes.hpp>
+#include <lzx.h>
+#include <mspack.h>
+#include <TinySHA1.hpp>
+
 #if defined(_WIN32)
+#include <intrin.h>
 #include <windows.h>
 #endif
 
@@ -20,7 +31,123 @@ constexpr uint32_t kXexHeaderFileFormatInfo = 0x000003FF;
 constexpr uint16_t kXexEncryptionNone = 0;
 constexpr uint16_t kXexCompressionNone = 0;
 constexpr uint16_t kXexCompressionBasic = 1;
+constexpr uint16_t kXexCompressionNormal = 2;
 constexpr uint64_t kGuestMemorySize = 0x100000000ull;
+constexpr uint8_t kXex2RetailKey[16] = { 0x20, 0xB1, 0x85, 0xA5, 0x9D, 0x28, 0xFD, 0xC3, 0x40, 0x58, 0x3F, 0xBB, 0x08, 0x96, 0xBF, 0x91 };
+constexpr uint8_t kAesBlankIv[16] = {};
+
+struct mspack_memory_file {
+    mspack_system sys;
+    void* buffer;
+    size_t buffer_size;
+    size_t offset;
+};
+
+static mspack_memory_file* mspack_memory_open(mspack_system*, void* buffer, size_t buffer_size)
+{
+    assert(buffer_size < INT_MAX);
+    if (buffer_size >= INT_MAX) return nullptr;
+
+    auto* memory_file = static_cast<mspack_memory_file*>(std::calloc(1, sizeof(mspack_memory_file)));
+    if (!memory_file) return nullptr;
+
+    memory_file->buffer = buffer;
+    memory_file->buffer_size = buffer_size;
+    return memory_file;
+}
+
+static void mspack_memory_close(mspack_memory_file* file)
+{
+    std::free(file);
+}
+
+static int mspack_memory_read(mspack_file* file, void* buffer, int chars)
+{
+    auto* memory_file = reinterpret_cast<mspack_memory_file*>(file);
+    const size_t remaining = memory_file->buffer_size - memory_file->offset;
+    const size_t total = std::min(size_t(chars), remaining);
+    std::memcpy(buffer, static_cast<uint8_t*>(memory_file->buffer) + memory_file->offset, total);
+    memory_file->offset += total;
+    return int(total);
+}
+
+static int mspack_memory_write(mspack_file* file, void* buffer, int chars)
+{
+    auto* memory_file = reinterpret_cast<mspack_memory_file*>(file);
+    const size_t remaining = memory_file->buffer_size - memory_file->offset;
+    const size_t total = std::min(size_t(chars), remaining);
+    std::memcpy(static_cast<uint8_t*>(memory_file->buffer) + memory_file->offset, buffer, total);
+    memory_file->offset += total;
+    return int(total);
+}
+
+static void* mspack_memory_alloc(mspack_system*, size_t chars)
+{
+    return std::calloc(chars, 1);
+}
+
+static void mspack_memory_free(void* ptr)
+{
+    std::free(ptr);
+}
+
+static void mspack_memory_copy(void* src, void* dest, size_t chars)
+{
+    std::memcpy(dest, src, chars);
+}
+
+static mspack_system* mspack_memory_sys_create()
+{
+    auto* sys = static_cast<mspack_system*>(std::calloc(1, sizeof(mspack_system)));
+    if (!sys) return nullptr;
+
+    sys->read = mspack_memory_read;
+    sys->write = mspack_memory_write;
+    sys->alloc = mspack_memory_alloc;
+    sys->free = mspack_memory_free;
+    sys->copy = mspack_memory_copy;
+    return sys;
+}
+
+static void mspack_memory_sys_destroy(mspack_system* sys)
+{
+    std::free(sys);
+}
+
+bool bit_scan_forward(uint32_t value, uint32_t* out_first_set_index)
+{
+#if defined(_MSC_VER)
+    return _BitScanForward(reinterpret_cast<unsigned long*>(out_first_set_index), value) != 0;
+#else
+    int index = __builtin_ffs(value);
+    *out_first_set_index = index - 1;
+    return index != 0;
+#endif
+}
+
+int lzx_decompress(const void* lzx_data, size_t lzx_length, void* dst, size_t dst_length, uint32_t window_size)
+{
+    uint32_t window_bits = 0;
+    if (!bit_scan_forward(window_size, &window_bits)) return 1;
+
+    int result_code = 1;
+    mspack_system* sys = mspack_memory_sys_create();
+    mspack_memory_file* lzx_src = sys ? mspack_memory_open(sys, const_cast<void*>(lzx_data), lzx_length) : nullptr;
+    mspack_memory_file* lzx_dst = sys ? mspack_memory_open(sys, dst, dst_length) : nullptr;
+    lzxd_stream* lzxd = (sys && lzx_src && lzx_dst)
+        ? lzxd_init(sys, reinterpret_cast<mspack_file*>(lzx_src), reinterpret_cast<mspack_file*>(lzx_dst), window_bits, 0, 0x8000, dst_length, 0)
+        : nullptr;
+
+    if (lzxd) {
+        result_code = lzxd_decompress(lzxd, dst_length);
+        lzxd_free(lzxd);
+    }
+
+    if (lzx_src) mspack_memory_close(lzx_src);
+    if (lzx_dst) mspack_memory_close(lzx_dst);
+    if (sys) mspack_memory_sys_destroy(sys);
+    return result_code;
+}
 
 uint16_t read_be16(const uint8_t* p)
 {
@@ -167,6 +294,108 @@ bool load_basic_image(const std::vector<uint8_t>& xex, const uint8_t* file_forma
     return true;
 }
 
+std::vector<uint8_t> get_decrypted_payload(const std::vector<uint8_t>& xex, const uint8_t* security,
+    uint32_t header_size, uint16_t encryption_type, std::string& error)
+{
+    if (header_size > xex.size()) {
+        error = "XEX header size is larger than the file.";
+        return {};
+    }
+
+    std::vector<uint8_t> payload(xex.begin() + header_size, xex.end());
+    if (encryption_type == kXexEncryptionNone) {
+        return payload;
+    }
+
+    if (encryption_type != 1) {
+        error = "Unsupported XEX encryption type.";
+        return {};
+    }
+
+    if ((payload.size() % 16) != 0) {
+        error = "Encrypted XEX payload size is not AES-block aligned.";
+        return {};
+    }
+
+    constexpr uint32_t key_size = 16;
+    uint8_t decrypted_key[key_size]{};
+    std::memcpy(decrypted_key, security + 0x150, key_size);
+
+    AES_ctx aes_context;
+    AES_init_ctx_iv(&aes_context, kXex2RetailKey, kAesBlankIv);
+    AES_CBC_decrypt_buffer(&aes_context, decrypted_key, key_size);
+
+    AES_init_ctx_iv(&aes_context, decrypted_key, kAesBlankIv);
+    AES_CBC_decrypt_buffer(&aes_context, payload.data(), payload.size());
+    return payload;
+}
+
+bool load_normal_image(const std::vector<uint8_t>& payload, const uint8_t* file_format,
+    uint32_t image_base, uint32_t image_size, GuestMemory& memory, std::string& error)
+{
+    const uint32_t window_size = read_be32(file_format + 8);
+    const uint8_t* block_ptr = file_format + 12;
+    const uint8_t* payload_ptr = payload.data();
+    const uint8_t* payload_end = payload.data() + payload.size();
+
+    std::vector<uint8_t> compressed;
+    sha1::SHA1 sha;
+
+    while (read_be32(block_ptr) != 0) {
+        const uint32_t block_size = read_be32(block_ptr);
+        if (payload_ptr + block_size > payload_end || block_size < 24) {
+            error = "Normal-compressed XEX block exceeds the encrypted payload.";
+            return false;
+        }
+
+        const uint8_t* next_block = payload_ptr;
+        sha.reset();
+        sha.processBytes(payload_ptr, block_size);
+        uint8_t digest[0x14]{};
+        sha.finalize(digest);
+        if (std::memcmp(digest, block_ptr + 4, sizeof(digest)) != 0) {
+            error = "Normal-compressed XEX block hash mismatch.";
+            return false;
+        }
+
+        payload_ptr += 24;
+        while (true) {
+            if (payload_ptr + 2 > payload_end) {
+                error = "Normal-compressed XEX chunk table is truncated.";
+                return false;
+            }
+
+            const size_t chunk_size = (size_t(payload_ptr[0]) << 8) | payload_ptr[1];
+            payload_ptr += 2;
+            if (chunk_size == 0) break;
+
+            if (payload_ptr + chunk_size > payload_end) {
+                error = "Normal-compressed XEX chunk exceeds the encrypted payload.";
+                return false;
+            }
+
+            compressed.insert(compressed.end(), payload_ptr, payload_ptr + chunk_size);
+            payload_ptr += chunk_size;
+        }
+
+        payload_ptr = next_block + block_size;
+        block_ptr = next_block;
+    }
+
+    if (!memory.commit(image_base, image_size)) {
+        error = "Failed to commit guest memory for the XEX image.";
+        return false;
+    }
+
+    int result = lzx_decompress(compressed.data(), compressed.size(), memory.base + image_base, image_size, window_size);
+    if (result != 0) {
+        error = "LZX decompression failed with code " + std::to_string(result) + ".";
+        return false;
+    }
+
+    return true;
+}
+
 }
 
 namespace runtime::boot {
@@ -232,14 +461,25 @@ BootResult LaunchFromContentRoot(const std::string& content_root)
 
     std::string load_error;
     bool loaded = false;
-    if (result.encryption_type != kXexEncryptionNone) {
-        load_error = "Encrypted XEX images need the XenonRecomp/XEX decrypt path wired into the runtime.";
-    } else if (result.compression_type == kXexCompressionNone) {
-        loaded = load_uncompressed_image(xex, header_size, result.image_base, result.image_size, guest, load_error);
-    } else if (result.compression_type == kXexCompressionBasic) {
-        loaded = load_basic_image(xex, file_format, header_size, result.image_base, result.image_size, guest, load_error);
+    std::vector<uint8_t> payload = get_decrypted_payload(xex, security, header_size, result.encryption_type, load_error);
+    if (!payload.empty()) {
+        if (result.compression_type == kXexCompressionNone) {
+            std::vector<uint8_t> decrypted_xex = xex;
+            decrypted_xex.resize(header_size);
+            decrypted_xex.insert(decrypted_xex.end(), payload.begin(), payload.end());
+            loaded = load_uncompressed_image(decrypted_xex, header_size, result.image_base, result.image_size, guest, load_error);
+        } else if (result.compression_type == kXexCompressionBasic) {
+            std::vector<uint8_t> decrypted_xex = xex;
+            decrypted_xex.resize(header_size);
+            decrypted_xex.insert(decrypted_xex.end(), payload.begin(), payload.end());
+            loaded = load_basic_image(decrypted_xex, file_format, header_size, result.image_base, result.image_size, guest, load_error);
+        } else if (result.compression_type == kXexCompressionNormal) {
+            loaded = load_normal_image(payload, file_format, result.image_base, result.image_size, guest, load_error);
+        } else {
+            load_error = "Delta-compressed XEX images need delta decompression wired into the runtime.";
+        }
     } else {
-        load_error = "Normal/delta-compressed XEX images need LZX/delta decompression wired into the runtime.";
+        if (load_error.empty()) load_error = "Failed to decrypt XEX payload.";
     }
 
     std::ostringstream message;
