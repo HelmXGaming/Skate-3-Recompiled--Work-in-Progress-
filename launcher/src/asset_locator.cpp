@@ -8,6 +8,44 @@ namespace fs = std::filesystem;
 static bool exists_file(const fs::path& p) { return fs::exists(p) && fs::is_regular_file(p); }
 static bool exists_dir(const fs::path& p) { return fs::exists(p) && fs::is_directory(p); }
 
+static std::string json_escape(std::string_view value) {
+    std::string escaped;
+    escaped.reserve(value.size());
+    for (char c : value) {
+        switch (c) {
+        case '\\': escaped += "\\\\"; break;
+        case '"': escaped += "\\\""; break;
+        case '\n': escaped += "\\n"; break;
+        case '\r': escaped += "\\r"; break;
+        case '\t': escaped += "\\t"; break;
+        default: escaped += c; break;
+        }
+    }
+    return escaped;
+}
+
+static std::string json_unescape(std::string_view value) {
+    std::string unescaped;
+    unescaped.reserve(value.size());
+    for (size_t i = 0; i < value.size(); ++i) {
+        if (value[i] != '\\' || i + 1 >= value.size()) {
+            unescaped.push_back(value[i]);
+            continue;
+        }
+
+        char next = value[++i];
+        switch (next) {
+        case '\\': unescaped.push_back('\\'); break;
+        case '"': unescaped.push_back('"'); break;
+        case 'n': unescaped.push_back('\n'); break;
+        case 'r': unescaped.push_back('\r'); break;
+        case 't': unescaped.push_back('\t'); break;
+        default: unescaped.push_back(next); break;
+        }
+    }
+    return unescaped;
+}
+
 std::optional<LauncherConfig> LoadConfig(const std::string& path) {
     LauncherConfig cfg;
     if (!exists_file(path)) return cfg; // default-initialized
@@ -24,7 +62,7 @@ std::optional<LauncherConfig> LoadConfig(const std::string& path) {
         if (q1 == std::string::npos) return {};
         auto q2 = s.find('"', q1 + 1);
         if (q2 == std::string::npos) return {};
-        return s.substr(q1 + 1, q2 - (q1 + 1));
+        return json_unescape(std::string_view(s).substr(q1 + 1, q2 - (q1 + 1)));
         };
 
     auto gr = find_string("game_root");
@@ -44,11 +82,11 @@ bool SaveConfig(const std::string& path, const LauncherConfig& cfg) {
     std::ofstream f(path, std::ios::trunc);
     if (!f) return false;
     f << "{\n";
-    f << "  \"game_root\": \"" << cfg.game_root << "\",\n";
+    f << "  \"game_root\": \"" << json_escape(cfg.game_root) << "\",\n";
     f << "  \"prefer_cache\": " << (cfg.prefer_cache ? "true" : "false") << ",\n";
-    f << "  \"cache_dir\": \"" << cfg.cache_dir << "\",\n";
+    f << "  \"cache_dir\": \"" << json_escape(cfg.cache_dir) << "\",\n";
     f << "  \"apply_title_update\": " << (cfg.apply_title_update ? "true" : "false") << ",\n";
-    f << "  \"title_update_path\": \"" << cfg.title_update_path << "\"\n";
+    f << "  \"title_update_path\": \"" << json_escape(cfg.title_update_path) << "\"\n";
     f << "}\n";
     return true;
 }

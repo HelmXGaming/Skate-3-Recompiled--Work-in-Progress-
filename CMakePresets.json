@@ -10,12 +10,26 @@
         "CMAKE_C_COMPILER": "clang-cl.exe",
         "CMAKE_CXX_COMPILER": "clang-cl.exe"
       }
+    },
+    {
+      "name": "windows-msvc-release",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "build-msvc",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Release"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "clang-release",
       "configurePreset": "windows-clang-release"
+    },
+    {
+      "name": "msvc-release",
+      "configurePreset": "windows-msvc-release",
+      "configuration": "Release"
     }
   ]
 }
