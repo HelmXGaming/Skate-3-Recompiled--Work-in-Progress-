@@ -23,9 +23,18 @@ struct GuestException {
     uintptr_t access_kind = 0;
     bool has_access_details = false;
     uint32_t lr = 0;
+    uint32_t ctr = 0;
+    uint32_t r1 = 0;
     uint32_t r3 = 0;
     uint32_t r4 = 0;
     uint32_t r5 = 0;
+    uint32_t r6 = 0;
+    uint32_t r7 = 0;
+    uint32_t r8 = 0;
+    uint32_t r9 = 0;
+    uint32_t r10 = 0;
+    uint32_t r11 = 0;
+    uint32_t r12 = 0;
     uint32_t r27 = 0;
     uint32_t r28 = 0;
     uint32_t r29 = 0;
@@ -35,22 +44,60 @@ struct GuestException {
     uint32_t guest_memory_size = 0;
     bool guest_memory_write = false;
     bool has_guest_memory_access = false;
+    uint32_t memory_r3 = 0;
+    uint32_t memory_r4 = 0;
+    uint32_t memory_r5 = 0;
+    uint32_t memory_r6 = 0;
+    uint32_t memory_r7 = 0;
+    uint32_t memory_r8 = 0;
+    uint32_t memory_r9 = 0;
+    uint32_t memory_r10 = 0;
+    uint32_t memory_r11 = 0;
+    uint32_t memory_r12 = 0;
+    const char* last_import_stub = "none";
+    uint32_t import_r3 = 0;
+    uint32_t import_r4 = 0;
+    uint32_t import_r5 = 0;
+    uint32_t import_r6 = 0;
+    uint32_t import_r7 = 0;
 };
 
 GuestException g_last_guest_exception;
 PPCContext* g_exception_context = nullptr;
 const char* g_last_import_stub = "none";
+uint32_t g_last_import_r3 = 0;
+uint32_t g_last_import_r4 = 0;
+uint32_t g_last_import_r5 = 0;
+uint32_t g_last_import_r6 = 0;
+uint32_t g_last_import_r7 = 0;
 uint32_t g_next_virtual_alloc = 0x00100000;
 uint64_t g_last_guest_memory_address = 0;
 uint32_t g_last_guest_memory_size = 0;
 bool g_last_guest_memory_write = false;
 bool g_has_last_guest_memory_access = false;
+uint32_t g_last_memory_r3 = 0;
+uint32_t g_last_memory_r4 = 0;
+uint32_t g_last_memory_r5 = 0;
+uint32_t g_last_memory_r6 = 0;
+uint32_t g_last_memory_r7 = 0;
+uint32_t g_last_memory_r8 = 0;
+uint32_t g_last_memory_r9 = 0;
+uint32_t g_last_memory_r10 = 0;
+uint32_t g_last_memory_r11 = 0;
+uint32_t g_last_memory_r12 = 0;
 
 } // namespace
 
 extern "C" void Skate3RecordImportStub(const char* name)
 {
     g_last_import_stub = name;
+    if (g_exception_context != nullptr) {
+        g_last_import_r3 = g_exception_context->r3.u32;
+        g_last_import_r4 = g_exception_context->r4.u32;
+        g_last_import_r5 = g_exception_context->r5.u32;
+        g_last_import_r6 = g_exception_context->r6.u32;
+        g_last_import_r7 = g_exception_context->r7.u32;
+    }
 }
 
 uint32_t ReadGuestU32(uint8_t* base, uint32_t address)
@@ -63,6 +110,16 @@ void WriteGuestU32(uint8_t* base, uint32_t address, uint32_t value)
     *reinterpret_cast<volatile uint32_t*>(base + address) = __builtin_bswap32(value);
 }
 
+void WriteGuestU8(uint8_t* base, uint32_t address, uint8_t value)
+{
+    *reinterpret_cast<volatile uint8_t*>(base + address) = value;
+}
+
+bool GuestRangeFits(uint32_t address, uint32_t size)
+{
+    return static_cast<uint64_t>(address) + size <= 0x100000000ull;
+}
+
 int32_t ReadGuestS32(uint8_t* base, uint32_t address)
 {
     return static_cast<int32_t>(ReadGuestU32(base, address));
@@ -73,12 +130,22 @@ uint32_t AlignUp(uint32_t value, uint32_t alignment)
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
-void RecordGuestMemoryAccess(uint64_t address, uint32_t size, bool write)
+void RecordGuestMemoryAccess(PPCContext& ctx, uint64_t address, uint32_t size, bool write)
 {
     g_last_guest_memory_address = address;
     g_last_guest_memory_size = size;
     g_last_guest_memory_write = write;
     g_has_last_guest_memory_access = true;
+    g_last_memory_r3 = ctx.r3.u32;
+    g_last_memory_r4 = ctx.r4.u32;
+    g_last_memory_r5 = ctx.r5.u32;
+    g_last_memory_r6 = ctx.r6.u32;
+    g_last_memory_r7 = ctx.r7.u32;
+    g_last_memory_r8 = ctx.r8.u32;
+    g_last_memory_r9 = ctx.r9.u32;
+    g_last_memory_r10 = ctx.r10.u32;
+    g_last_memory_r11 = ctx.r11.u32;
+    g_last_memory_r12 = ctx.r12.u32;
 }
 
 void RaiseGuestMemoryFault(uint64_t address, bool write)
@@ -87,59 +154,59 @@ void RaiseGuestMemoryFault(uint64_t address, bool write)
     RaiseException(EXCEPTION_ACCESS_VIOLATION, 0, 2, details);
 }
 
-void CheckGuestMemoryAccess(uint64_t address, uint32_t size, bool write)
+void CheckGuestMemoryAccess(PPCContext& ctx, uint64_t address, uint32_t size, bool write)
 {
-    RecordGuestMemoryAccess(address, size, write);
+    RecordGuestMemoryAccess(ctx, address, size, write);
     if (address + size < address || address + size > 0x100000000ull) {
         RaiseGuestMemoryFault(address, write);
     }
 }
 
-uint8_t Skate3PpcLoadU8(uint8_t* base, uint64_t address)
+uint8_t Skate3PpcLoadU8(PPCContext& ctx, uint8_t* base, uint64_t address)
 {
-    CheckGuestMemoryAccess(address, 1, false);
+    CheckGuestMemoryAccess(ctx, address, 1, false);
     return *reinterpret_cast<volatile uint8_t*>(base + address);
 }
 
-uint16_t Skate3PpcLoadU16(uint8_t* base, uint64_t address)
+uint16_t Skate3PpcLoadU16(PPCContext& ctx, uint8_t* base, uint64_t address)
 {
-    CheckGuestMemoryAccess(address, 2, false);
+    CheckGuestMemoryAccess(ctx, address, 2, false);
     return __builtin_bswap16(*reinterpret_cast<volatile uint16_t*>(base + address));
 }
 
-uint32_t Skate3PpcLoadU32(uint8_t* base, uint64_t address)
+uint32_t Skate3PpcLoadU32(PPCContext& ctx, uint8_t* base, uint64_t address)
 {
-    CheckGuestMemoryAccess(address, 4, false);
+    CheckGuestMemoryAccess(ctx, address, 4, false);
     return __builtin_bswap32(*reinterpret_cast<volatile uint32_t*>(base + address));
 }
 
-uint64_t Skate3PpcLoadU64(uint8_t* base, uint64_t address)
+uint64_t Skate3PpcLoadU64(PPCContext& ctx, uint8_t* base, uint64_t address)
 {
-    CheckGuestMemoryAccess(address, 8, false);
+    CheckGuestMemoryAccess(ctx, address, 8, false);
     return __builtin_bswap64(*reinterpret_cast<volatile uint64_t*>(base + address));
 }
 
-void Skate3PpcStoreU8(uint8_t* base, uint64_t address, uint8_t value)
+void Skate3PpcStoreU8(PPCContext& ctx, uint8_t* base, uint64_t address, uint8_t value)
 {
-    CheckGuestMemoryAccess(address, 1, true);
+    CheckGuestMemoryAccess(ctx, address, 1, true);
     *reinterpret_cast<volatile uint8_t*>(base + address) = value;
 }
 
-void Skate3PpcStoreU16(uint8_t* base, uint64_t address, uint16_t value)
+void Skate3PpcStoreU16(PPCContext& ctx, uint8_t* base, uint64_t address, uint16_t value)
 {
-    CheckGuestMemoryAccess(address, 2, true);
+    CheckGuestMemoryAccess(ctx, address, 2, true);
     *reinterpret_cast<volatile uint16_t*>(base + address) = __builtin_bswap16(value);
 }
 
-void Skate3PpcStoreU32(uint8_t* base, uint64_t address, uint32_t value)
+void Skate3PpcStoreU32(PPCContext& ctx, uint8_t* base, uint64_t address, uint32_t value)
 {
-    CheckGuestMemoryAccess(address, 4, true);
+    CheckGuestMemoryAccess(ctx, address, 4, true);
     *reinterpret_cast<volatile uint32_t*>(base + address) = __builtin_bswap32(value);
 }
 
-void Skate3PpcStoreU64(uint8_t* base, uint64_t address, uint64_t value)
+void Skate3PpcStoreU64(PPCContext& ctx, uint8_t* base, uint64_t address, uint64_t value)
 {
-    CheckGuestMemoryAccess(address, 8, true);
+    CheckGuestMemoryAccess(ctx, address, 8, true);
     *reinterpret_cast<volatile uint64_t*>(base + address) = __builtin_bswap64(value);
 }
 
@@ -187,6 +254,34 @@ void Skate3ImportNtFreeVirtualMemory(PPCContext& ctx, uint8_t*)
     ctx.r3.u64 = 0;
 }
 
+void SeedXboxHeapListHeads(uint8_t* base, uint32_t heap)
+{
+    constexpr uint32_t small_list_start = 384;
+    constexpr uint32_t small_list_count = 128;
+    constexpr uint32_t small_list_stride = 8;
+    constexpr uint32_t small_list_bytes = small_list_count * small_list_stride;
+
+    if (!GuestRangeFits(heap + small_list_start, small_list_bytes)) {
+        return;
+    }
+
+    if (ReadGuestU32(base, heap + small_list_start) != 0) {
+        return;
+    }
+
+    for (uint32_t i = 0; i < small_list_count; ++i) {
+        const uint32_t list_head = heap + small_list_start + (i * small_list_stride);
+        WriteGuestU32(base, list_head + 0, list_head);
+        WriteGuestU32(base, list_head + 4, list_head);
+    }
+
+    const uint32_t root = heap + 88;
+    if (GuestRangeFits(root, 8) && ReadGuestU32(base, root) == 0 && ReadGuestU32(base, root + 4) == 0) {
+        WriteGuestU32(base, root + 0, root);
+        WriteGuestU32(base, root + 4, root);
+    }
+}
+
 void Skate3ImportRtlInitializeCriticalSection(PPCContext& ctx, uint8_t* base)
 {
     const uint32_t cs = ctx.r3.u32;
@@ -195,47 +290,59 @@ void Skate3ImportRtlInitializeCriticalSection(PPCContext& ctx, uint8_t* base)
         return;
     }
 
-    // Xbox critical sections begin with a 16-byte dispatch header, followed by
-    // LockCount, RecursionCount, and OwningThread.
-    WriteGuestU32(base, cs + 0, 0);
-    WriteGuestU32(base, cs + 4, 0);
-    WriteGuestU32(base, cs + 8, 0);
-    WriteGuestU32(base, cs + 12, 0);
-    WriteGuestU32(base, cs + 16, 0xFFFFFFFF);
-    WriteGuestU32(base, cs + 20, 0);
-    WriteGuestU32(base, cs + 24, 0);
+    constexpr uint32_t heap_from_critical_section = 0x60;
+    if (GuestRangeFits(cs, heap_from_critical_section)) {
+        SeedXboxHeapListHeads(base, cs + heap_from_critical_section);
+    }
+
     ctx.r3.u64 = 0;
 }
 
 void Skate3ImportRtlEnterCriticalSection(PPCContext& ctx, uint8_t* base)
 {
-    const uint32_t cs = ctx.r3.u32;
-    if (cs == 0) {
-        return;
-    }
-
-    const uint32_t thread_id = ctx.r13.u32 != 0 ? ctx.r13.u32 : 1;
-    const uint32_t recursion = ReadGuestU32(base, cs + 20);
-    WriteGuestU32(base, cs + 16, 0);
-    WriteGuestU32(base, cs + 20, recursion + 1);
-    WriteGuestU32(base, cs + 24, thread_id);
+    (void)ctx;
+    (void)base;
 }
 
 void Skate3ImportRtlLeaveCriticalSection(PPCContext& ctx, uint8_t* base)
 {
-    const uint32_t cs = ctx.r3.u32;
-    if (cs == 0) {
-        return;
+    (void)ctx;
+    (void)base;
+}
+
+void Skate3ImportRtlFillMemoryUlong(PPCContext& ctx, uint8_t* base)
+{
+    const uint32_t destination = ctx.r3.u32;
+    const uint32_t length = ctx.r4.u32;
+    const uint32_t pattern = ctx.r5.u32;
+
+    for (uint32_t offset = 0; offset + sizeof(uint32_t) <= length; offset += sizeof(uint32_t)) {
+        WriteGuestU32(base, destination + offset, pattern);
     }
 
-    const int32_t recursion = ReadGuestS32(base, cs + 20);
-    if (recursion <= 1) {
-        WriteGuestU32(base, cs + 16, 0xFFFFFFFF);
-        WriteGuestU32(base, cs + 20, 0);
-        WriteGuestU32(base, cs + 24, 0);
-    } else {
-        WriteGuestU32(base, cs + 20, static_cast<uint32_t>(recursion - 1));
+    const uint32_t remaining = length & 3u;
+    const uint32_t tail = length - remaining;
+    for (uint32_t i = 0; i < remaining; ++i) {
+        const uint32_t shift = 24u - (i * 8u);
+        WriteGuestU8(base, destination + tail + i, static_cast<uint8_t>((pattern >> shift) & 0xFFu));
     }
+}
+
+void Skate3ImportRtlCompareMemoryUlong(PPCContext& ctx, uint8_t* base)
+{
+    const uint32_t source = ctx.r3.u32;
+    const uint32_t length = ctx.r4.u32;
+    const uint32_t pattern = ctx.r5.u32;
+    uint32_t matching_bytes = 0;
+
+    for (; matching_bytes + sizeof(uint32_t) <= length; matching_bytes += sizeof(uint32_t)) {
+        if (ReadGuestU32(base, source + matching_bytes) != pattern) {
+            ctx.r3.u64 = matching_bytes;
+            return;
+        }
+    }
+
+    ctx.r3.u64 = matching_bytes;
 }
 
 namespace {
@@ -254,9 +361,18 @@ int CaptureGuestException(EXCEPTION_POINTERS* exception)
     }
     if (g_exception_context != nullptr) {
         g_last_guest_exception.lr = g_exception_context->lr;
+        g_last_guest_exception.ctr = g_exception_context->ctr.u32;
+        g_last_guest_exception.r1 = g_exception_context->r1.u32;
         g_last_guest_exception.r3 = g_exception_context->r3.u32;
         g_last_guest_exception.r4 = g_exception_context->r4.u32;
         g_last_guest_exception.r5 = g_exception_context->r5.u32;
+        g_last_guest_exception.r6 = g_exception_context->r6.u32;
+        g_last_guest_exception.r7 = g_exception_context->r7.u32;
+        g_last_guest_exception.r8 = g_exception_context->r8.u32;
+        g_last_guest_exception.r9 = g_exception_context->r9.u32;
+        g_last_guest_exception.r10 = g_exception_context->r10.u32;
+        g_last_guest_exception.r11 = g_exception_context->r11.u32;
+        g_last_guest_exception.r12 = g_exception_context->r12.u32;
         g_last_guest_exception.r27 = g_exception_context->r27.u32;
         g_last_guest_exception.r28 = g_exception_context->r28.u32;
         g_last_guest_exception.r29 = g_exception_context->r29.u32;
@@ -267,6 +383,22 @@ int CaptureGuestException(EXCEPTION_POINTERS* exception)
     g_last_guest_exception.guest_memory_address = g_last_guest_memory_address;
     g_last_guest_exception.guest_memory_size = g_last_guest_memory_size;
     g_last_guest_exception.guest_memory_write = g_last_guest_memory_write;
+    g_last_guest_exception.memory_r3 = g_last_memory_r3;
+    g_last_guest_exception.memory_r4 = g_last_memory_r4;
+    g_last_guest_exception.memory_r5 = g_last_memory_r5;
+    g_last_guest_exception.memory_r6 = g_last_memory_r6;
+    g_last_guest_exception.memory_r7 = g_last_memory_r7;
+    g_last_guest_exception.memory_r8 = g_last_memory_r8;
+    g_last_guest_exception.memory_r9 = g_last_memory_r9;
+    g_last_guest_exception.memory_r10 = g_last_memory_r10;
+    g_last_guest_exception.memory_r11 = g_last_memory_r11;
+    g_last_guest_exception.memory_r12 = g_last_memory_r12;
+    g_last_guest_exception.last_import_stub = g_last_import_stub;
+    g_last_guest_exception.import_r3 = g_last_import_r3;
+    g_last_guest_exception.import_r4 = g_last_import_r4;
+    g_last_guest_exception.import_r5 = g_last_import_r5;
+    g_last_guest_exception.import_r6 = g_last_import_r6;
+    g_last_guest_exception.import_r7 = g_last_import_r7;
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
@@ -310,6 +442,25 @@ void AppendNearestGeneratedFunction(std::ostringstream& message, void* host_addr
         << " + 0x" << (target - nearest_host) << "\n";
 }
 
+void AppendGuestAddressFunction(std::ostringstream& message, const char* label, uint32_t guest_address)
+{
+    uint32_t nearest_guest = 0;
+
+    for (size_t i = 0; PPCFuncMappings[i].guest != 0; ++i) {
+        if (PPCFuncMappings[i].guest <= guest_address && PPCFuncMappings[i].guest >= nearest_guest) {
+            nearest_guest = PPCFuncMappings[i].guest;
+        }
+    }
+
+    if (nearest_guest == 0) {
+        return;
+    }
+
+    message << label << " function: 0x" << std::hex << std::uppercase
+        << std::setw(8) << std::setfill('0') << nearest_guest
+        << " + 0x" << (guest_address - nearest_guest) << "\n";
+}
+
 void AppendAccessViolationDetails(std::ostringstream& message, uint8_t* guest_base)
 {
     if (!g_last_guest_exception.has_access_details) {
@@ -341,9 +492,18 @@ void AppendRegisterSnapshot(std::ostringstream& message)
 {
     message << "LR: 0x" << std::hex << std::uppercase << std::setw(8) << std::setfill('0')
         << g_last_guest_exception.lr << "\n"
+        << "r1/ctr: 0x" << std::setw(8) << g_last_guest_exception.r1
+        << " 0x" << std::setw(8) << g_last_guest_exception.ctr << "\n"
         << "r3/r4/r5: 0x" << std::setw(8) << g_last_guest_exception.r3
         << " 0x" << std::setw(8) << g_last_guest_exception.r4
         << " 0x" << std::setw(8) << g_last_guest_exception.r5 << "\n"
+        << "r6/r7/r8: 0x" << std::setw(8) << g_last_guest_exception.r6
+        << " 0x" << std::setw(8) << g_last_guest_exception.r7
+        << " 0x" << std::setw(8) << g_last_guest_exception.r8 << "\n"
+        << "r9-r12: 0x" << std::setw(8) << g_last_guest_exception.r9
+        << " 0x" << std::setw(8) << g_last_guest_exception.r10
+        << " 0x" << std::setw(8) << g_last_guest_exception.r11
+        << " 0x" << std::setw(8) << g_last_guest_exception.r12 << "\n"
         << "r27-r31: 0x" << std::setw(8) << g_last_guest_exception.r27
         << " 0x" << std::setw(8) << g_last_guest_exception.r28
         << " 0x" << std::setw(8) << g_last_guest_exception.r29
@@ -361,12 +521,28 @@ void AppendGuestMemorySnapshot(std::ostringstream& message)
         << (g_last_guest_exception.guest_memory_write ? "write" : "read")
         << " " << std::dec << g_last_guest_exception.guest_memory_size
         << " byte(s) at guest 0x" << std::hex << std::uppercase
-        << g_last_guest_exception.guest_memory_address << "\n";
+        << g_last_guest_exception.guest_memory_address << "\n"
+        << "Memory r3-r7: 0x" << std::setw(8) << std::setfill('0') << g_last_guest_exception.memory_r3
+        << " 0x" << std::setw(8) << g_last_guest_exception.memory_r4
+        << " 0x" << std::setw(8) << g_last_guest_exception.memory_r5
+        << " 0x" << std::setw(8) << g_last_guest_exception.memory_r6
+        << " 0x" << std::setw(8) << g_last_guest_exception.memory_r7 << "\n"
+        << "Memory r8-r12: 0x" << std::setw(8) << g_last_guest_exception.memory_r8
+        << " 0x" << std::setw(8) << g_last_guest_exception.memory_r9
+        << " 0x" << std::setw(8) << g_last_guest_exception.memory_r10
+        << " 0x" << std::setw(8) << g_last_guest_exception.memory_r11
+        << " 0x" << std::setw(8) << g_last_guest_exception.memory_r12 << "\n";
 }
 
 void AppendImportSnapshot(std::ostringstream& message)
 {
-    message << "Last import stub: " << g_last_import_stub << "\n";
+    message << "Last import stub: " << g_last_guest_exception.last_import_stub << "\n"
+        << "Import r3-r7: 0x" << std::hex << std::uppercase << std::setw(8) << std::setfill('0')
+        << g_last_guest_exception.import_r3
+        << " 0x" << std::setw(8) << g_last_guest_exception.import_r4
+        << " 0x" << std::setw(8) << g_last_guest_exception.import_r5
+        << " 0x" << std::setw(8) << g_last_guest_exception.import_r6
+        << " 0x" << std::setw(8) << g_last_guest_exception.import_r7 << "\n";
 }
 
 } // namespace
@@ -392,6 +568,11 @@ RecompEntryResult TryEnterGeneratedGuest(uint32_t entry_point, uint8_t* guest_ba
 #if defined(SKATE3_HAS_RECOMP_LIB)
     result.available = true;
     g_last_import_stub = "none";
+    g_last_import_r3 = 0;
+    g_last_import_r4 = 0;
+    g_last_import_r5 = 0;
+    g_last_import_r6 = 0;
+    g_last_import_r7 = 0;
     g_next_virtual_alloc = 0x00100000;
 
     for (size_t i = 0; PPCFuncMappings[i].guest != 0; ++i) {
@@ -426,6 +607,7 @@ RecompEntryResult TryEnterGeneratedGuest(uint32_t entry_point, uint8_t* guest_ba
             << "Host address: " << g_last_guest_exception.address << "\n";
         AppendNearestGeneratedFunction(message, g_last_guest_exception.address);
         AppendAccessViolationDetails(message, guest_base);
+        AppendGuestAddressFunction(message, "LR", g_last_guest_exception.lr);
         AppendRegisterSnapshot(message);
         AppendGuestMemorySnapshot(message);
         AppendImportSnapshot(message);

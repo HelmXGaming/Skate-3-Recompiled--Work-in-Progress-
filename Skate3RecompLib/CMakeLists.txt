@@ -53,6 +53,16 @@ foreach(SKATE3_RECOMP_IMPORT_DECL IN LISTS SKATE3_RECOMP_IMPORT_DECLS)
             "namespace runtime { namespace boot { void Skate3ImportRtlLeaveCriticalSection(PPCContext& ctx, uint8_t* base); } }\n"
             "void __imp__RtlLeaveCriticalSection(PPCContext& ctx, uint8_t* base) { Skate3RecordImportStub(\"__imp__RtlLeaveCriticalSection\"); runtime::boot::Skate3ImportRtlLeaveCriticalSection(ctx, base); }\n"
         )
+    elseif (SKATE3_RECOMP_IMPORT_NAME STREQUAL "__imp__RtlFillMemoryUlong")
+        file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}"
+            "namespace runtime { namespace boot { void Skate3ImportRtlFillMemoryUlong(PPCContext& ctx, uint8_t* base); } }\n"
+            "void __imp__RtlFillMemoryUlong(PPCContext& ctx, uint8_t* base) { Skate3RecordImportStub(\"__imp__RtlFillMemoryUlong\"); runtime::boot::Skate3ImportRtlFillMemoryUlong(ctx, base); }\n"
+        )
+    elseif (SKATE3_RECOMP_IMPORT_NAME STREQUAL "__imp__RtlCompareMemoryUlong")
+        file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}"
+            "namespace runtime { namespace boot { void Skate3ImportRtlCompareMemoryUlong(PPCContext& ctx, uint8_t* base); } }\n"
+            "void __imp__RtlCompareMemoryUlong(PPCContext& ctx, uint8_t* base) { Skate3RecordImportStub(\"__imp__RtlCompareMemoryUlong\"); runtime::boot::Skate3ImportRtlCompareMemoryUlong(ctx, base); }\n"
+        )
     else()
         file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}" "SKATE3_IMPORT_STUB(${SKATE3_RECOMP_IMPORT_NAME})\n")
     endif()
