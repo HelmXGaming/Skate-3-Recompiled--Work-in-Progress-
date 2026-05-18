@@ -18,11 +18,44 @@ file(GLOB SKATE3_RECOMP_PPC_SOURCES CONFIGURE_DEPENDS
 file(STRINGS "${SKATE3_RECOMP_SHARED_HEADER}" SKATE3_RECOMP_IMPORT_DECLS REGEX "^PPC_EXTERN_FUNC\\(__imp__.*\\);$")
 file(WRITE "${SKATE3_RECOMP_IMPORT_STUBS}"
     "#include \"ppc_recomp_shared.h\"\n\n"
-    "#define SKATE3_IMPORT_STUB(name) void name(PPCContext& ctx, uint8_t*) { ctx.r3.u64 = 0; }\n\n"
+    "extern \"C\" void Skate3RecordImportStub(const char* name);\n\n"
+    "#define SKATE3_IMPORT_STUB(name) void name(PPCContext& ctx, uint8_t*) { Skate3RecordImportStub(#name); ctx.r3.u64 = 0; }\n\n"
 )
 foreach(SKATE3_RECOMP_IMPORT_DECL IN LISTS SKATE3_RECOMP_IMPORT_DECLS)
     string(REGEX REPLACE "^PPC_EXTERN_FUNC\\(([^\\)]*)\\);$" "\\1" SKATE3_RECOMP_IMPORT_NAME "${SKATE3_RECOMP_IMPORT_DECL}")
-    file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}" "SKATE3_IMPORT_STUB(${SKATE3_RECOMP_IMPORT_NAME})\n")
+    if (SKATE3_RECOMP_IMPORT_NAME STREQUAL "__imp__NtAllocateVirtualMemory")
+        file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}"
+            "namespace runtime { namespace boot { void Skate3ImportNtAllocateVirtualMemory(PPCContext& ctx, uint8_t* base); } }\n"
+            "void __imp__NtAllocateVirtualMemory(PPCContext& ctx, uint8_t* base) { Skate3RecordImportStub(\"__imp__NtAllocateVirtualMemory\"); runtime::boot::Skate3ImportNtAllocateVirtualMemory(ctx, base); }\n"
+        )
+    elseif (SKATE3_RECOMP_IMPORT_NAME STREQUAL "__imp__NtFreeVirtualMemory")
+        file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}"
+            "namespace runtime { namespace boot { void Skate3ImportNtFreeVirtualMemory(PPCContext& ctx, uint8_t* base); } }\n"
+            "void __imp__NtFreeVirtualMemory(PPCContext& ctx, uint8_t* base) { Skate3RecordImportStub(\"__imp__NtFreeVirtualMemory\"); runtime::boot::Skate3ImportNtFreeVirtualMemory(ctx, base); }\n"
+        )
+    elseif (SKATE3_RECOMP_IMPORT_NAME STREQUAL "__imp__RtlInitializeCriticalSection")
+        file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}"
+            "namespace runtime { namespace boot { void Skate3ImportRtlInitializeCriticalSection(PPCContext& ctx, uint8_t* base); } }\n"
+            "void __imp__RtlInitializeCriticalSection(PPCContext& ctx, uint8_t* base) { Skate3RecordImportStub(\"__imp__RtlInitializeCriticalSection\"); runtime::boot::Skate3ImportRtlInitializeCriticalSection(ctx, base); }\n"
+        )
+    elseif (SKATE3_RECOMP_IMPORT_NAME STREQUAL "__imp__RtlInitializeCriticalSectionAndSpinCount")
+        file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}"
+            "namespace runtime { namespace boot { void Skate3ImportRtlInitializeCriticalSection(PPCContext& ctx, uint8_t* base); } }\n"
+            "void __imp__RtlInitializeCriticalSectionAndSpinCount(PPCContext& ctx, uint8_t* base) { Skate3RecordImportStub(\"__imp__RtlInitializeCriticalSectionAndSpinCount\"); runtime::boot::Skate3ImportRtlInitializeCriticalSection(ctx, base); }\n"
+        )
+    elseif (SKATE3_RECOMP_IMPORT_NAME STREQUAL "__imp__RtlEnterCriticalSection")
+        file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}"
+            "namespace runtime { namespace boot { void Skate3ImportRtlEnterCriticalSection(PPCContext& ctx, uint8_t* base); } }\n"
+            "void __imp__RtlEnterCriticalSection(PPCContext& ctx, uint8_t* base) { Skate3RecordImportStub(\"__imp__RtlEnterCriticalSection\"); runtime::boot::Skate3ImportRtlEnterCriticalSection(ctx, base); }\n"
+        )
+    elseif (SKATE3_RECOMP_IMPORT_NAME STREQUAL "__imp__RtlLeaveCriticalSection")
+        file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}"
+            "namespace runtime { namespace boot { void Skate3ImportRtlLeaveCriticalSection(PPCContext& ctx, uint8_t* base); } }\n"
+            "void __imp__RtlLeaveCriticalSection(PPCContext& ctx, uint8_t* base) { Skate3RecordImportStub(\"__imp__RtlLeaveCriticalSection\"); runtime::boot::Skate3ImportRtlLeaveCriticalSection(ctx, base); }\n"
+        )
+    else()
+        file(APPEND "${SKATE3_RECOMP_IMPORT_STUBS}" "SKATE3_IMPORT_STUB(${SKATE3_RECOMP_IMPORT_NAME})\n")
+    endif()
 endforeach()
 
 add_library(Skate3RecompLib STATIC

@@ -504,11 +504,15 @@ BootResult LaunchFromContentRoot(const std::string& content_root)
     uint32_t function_table_start = 0;
     uint32_t function_table_size = 0;
     if (GetGeneratedFunctionTableRange(function_table_start, function_table_size)) {
+        constexpr uint32_t low_runtime_base = 0x00010000;
+        constexpr uint32_t low_runtime_size = 0x00010000;
         constexpr uint32_t stack_base = 0x70000000;
         constexpr uint32_t stack_size = 0x00100000;
         constexpr uint32_t stack_top = stack_base + stack_size - 0x100;
 
-        if (!guest.commit(function_table_start, function_table_size)) {
+        if (!guest.commit(low_runtime_base, low_runtime_size)) {
+            message << "\n\nGenerated PPC is linked, but the runtime could not commit low guest runtime memory.";
+        } else if (!guest.commit(function_table_start, function_table_size)) {
             message << "\n\nGenerated PPC is linked, but the runtime could not commit the function lookup table.";
         } else if (!guest.commit(stack_base, stack_size)) {
             message << "\n\nGenerated PPC is linked, but the runtime could not commit the initial guest stack.";
