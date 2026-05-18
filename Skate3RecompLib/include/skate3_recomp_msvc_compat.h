@@ -41,6 +41,15 @@ inline bool skate3_recomp_sync_bool_compare_and_swap(uint32_t* ptr, int32_t expe
     return previous == static_cast<long>(expected);
 }
 
+inline bool skate3_recomp_sync_bool_compare_and_swap(uint64_t* ptr, int64_t expected, uint64_t desired)
+{
+    const __int64 previous = _InterlockedCompareExchange64(
+        reinterpret_cast<volatile __int64*>(ptr),
+        static_cast<__int64>(desired),
+        static_cast<__int64>(expected));
+    return previous == static_cast<__int64>(expected);
+}
+
 #define __sync_bool_compare_and_swap(ptr, expected, desired) \
     skate3_recomp_sync_bool_compare_and_swap((ptr), (expected), (desired))
 

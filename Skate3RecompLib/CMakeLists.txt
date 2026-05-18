@@ -18,7 +18,7 @@ file(GLOB SKATE3_RECOMP_PPC_SOURCES CONFIGURE_DEPENDS
 file(STRINGS "${SKATE3_RECOMP_SHARED_HEADER}" SKATE3_RECOMP_IMPORT_DECLS REGEX "^PPC_EXTERN_FUNC\\(__imp__.*\\);$")
 file(WRITE "${SKATE3_RECOMP_IMPORT_STUBS}"
     "#include \"ppc_recomp_shared.h\"\n\n"
-    "#define SKATE3_IMPORT_STUB(name) PPC_FUNC_IMPL(name) { ctx.r3.u64 = 0; }\n\n"
+    "#define SKATE3_IMPORT_STUB(name) void name(PPCContext& ctx, uint8_t*) { ctx.r3.u64 = 0; }\n\n"
 )
 foreach(SKATE3_RECOMP_IMPORT_DECL IN LISTS SKATE3_RECOMP_IMPORT_DECLS)
     string(REGEX REPLACE "^PPC_EXTERN_FUNC\\(([^\\)]*)\\);$" "\\1" SKATE3_RECOMP_IMPORT_NAME "${SKATE3_RECOMP_IMPORT_DECL}")
@@ -37,13 +37,14 @@ add_library(Skate3RecompLib STATIC
 target_include_directories(Skate3RecompLib PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${SKATE3_RECOMP_PPC_DIR}"
+    "${CMAKE_SOURCE_DIR}/third_party/XenonRecomp/thirdparty/simde"
 )
-
-target_include_directories(Skate3RecompLib PRIVATE "${CMAKE_SOURCE_DIR}/third_party/XenonRecomp/thirdparty/simde")
 
 target_compile_options(Skate3RecompLib PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
     $<$<CXX_COMPILER_ID:MSVC>:/MP4>
+    $<$<CXX_COMPILER_ID:MSVC>:/Od>
+    $<$<CXX_COMPILER_ID:MSVC>:/Ob0>
     $<$<CXX_COMPILER_ID:MSVC>:/FI${CMAKE_CURRENT_SOURCE_DIR}/include/skate3_recomp_msvc_compat.h>
 )
 

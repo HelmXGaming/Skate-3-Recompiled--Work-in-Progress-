@@ -19,6 +19,16 @@
       "cacheVariables": {
         "CMAKE_CONFIGURATION_TYPES": "Release"
       }
+    },
+    {
+      "name": "windows-msvc-recomp-release",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "build-recomp",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Release",
+        "SKATE3_ENABLE_RECOMP_LIB": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -29,6 +39,11 @@
     {
       "name": "msvc-release",
       "configurePreset": "windows-msvc-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "msvc-recomp-release",
+      "configurePreset": "windows-msvc-recomp-release",
       "configuration": "Release"
     }
   ]

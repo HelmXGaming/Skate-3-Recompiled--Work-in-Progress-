@@ -11,6 +11,7 @@ This project is an early Skate 3 native Windows recompilation experiment using t
 - Required files are checked through `tools/manifest_boot.json`.
 - Validated files are copied into `cache/Skate3`.
 - `tools/run_recomp.bat` can build XenonRecomp tools, analyse `game/default.xex`, and generate raw PPC C++ into `generated/ppc`.
+- `setup_recomp.bat` builds the recomp-enabled launcher once generated PPC output exists.
 - Generated recomp output is intentionally ignored by Git; rerun the tool when you need to refresh it.
 - Pressing Play now enters the runtime boot path after validation: it mounts cached content, reads `default.xex`, parses XEX metadata, decrypts/decompresses the XEX image, reserves guest address space, and reports the current guest-entry blocker.
 - The default build still produces only `Skate3Launcher.exe`. When configured with `SKATE3_ENABLE_RECOMP_LIB=ON`, the runtime also wires a guarded generated-PPC entry bridge and import stubs for the next launch milestone.
@@ -52,14 +53,15 @@ tools\run_recomp.bat
 
 This script expects `game/default.xex` or a launcher-imported `cache/Skate3/iso_extracted/default.xex`, builds `XenonAnalyse.exe` and `XenonRecomp.exe`, writes switch-table data to `Skate3RecompLib/config/skate3_switches.toml`, and writes generated PPC output to `generated/ppc`.
 
-The generated C++ can be wired into CMake with:
+After `tools\run_recomp.bat` succeeds, build the recomp-enabled launcher with:
 
 ```bat
-cmake -S . -B build-recomp-test -G "Visual Studio 17 2022" -A x64 -DSKATE3_ENABLE_RECOMP_LIB=ON
-cmake --build build-recomp-test --config Release --target Skate3RecompLib
+setup_recomp.bat
 ```
 
-This target is not part of the default launcher build yet. The runtime can now stage the XEX image and has a guarded bridge for generated PPC entry dispatch, but the current raw recomp pass still reports missing save/restore helper addresses and unsupported PPC instructions. Those helper addresses and the first real kernel/XAM import implementations are the next boot blockers.
+The recomp-enabled launcher is written to `build-recomp/bin/Release/Skate3Launcher.exe`. The default `setup.bat` path still builds the lightweight launcher without generated PPC.
+
+The runtime can now stage the XEX image, link generated PPC, fill the generated function lookup table, and dispatch the XEX entrypoint. The next boot blockers are expected to be raw guest-runtime failures such as missing kernel/XAM imports, save/restore helper handling, or unimplemented host services.
 
 ## Layout
 

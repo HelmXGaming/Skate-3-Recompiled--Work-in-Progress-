@@ -25,7 +25,13 @@ namespace {
 
 constexpr int kWindowWidth = 1280;
 constexpr int kWindowHeight = 720;
+#if defined(SKATE3_HAS_RECOMP_LIB)
+constexpr const char* kVersion = "Version 0.1.0 + Recomp";
+constexpr const char* kWindowTitle = "Skate 3 Recomp Launcher (Recomp Linked)";
+#else
 constexpr const char* kVersion = "Version 0.1.0";
+constexpr const char* kWindowTitle = "Skate 3 Recomp Launcher";
+#endif
 
 enum class Screen {
     Main,
@@ -571,7 +577,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int show_cmd) {
     wc.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
     RegisterClassA(&wc);
 
-    HWND hwnd = CreateWindowExA(0, class_name, "Skate 3 Recomp Launcher",
+    HWND hwnd = CreateWindowExA(0, class_name, kWindowTitle,
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
         CW_USEDEFAULT, CW_USEDEFAULT, kWindowWidth, kWindowHeight,
         nullptr, nullptr, instance, nullptr);
