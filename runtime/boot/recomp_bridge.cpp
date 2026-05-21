@@ -44,6 +44,8 @@ struct GuestException {
     uint32_t guest_memory_size = 0;
     bool guest_memory_write = false;
     bool has_guest_memory_access = false;
+    const char* guest_memory_source_file = nullptr;
+    int guest_memory_source_line = 0;
     uint32_t memory_r3 = 0;
     uint32_t memory_r4 = 0;
     uint32_t memory_r5 = 0;
@@ -75,6 +77,8 @@ uint64_t g_last_guest_memory_address = 0;
 uint32_t g_last_guest_memory_size = 0;
 bool g_last_guest_memory_write = false;
 bool g_has_last_guest_memory_access = false;
+const char* g_last_guest_memory_source_file = nullptr;
+int g_last_guest_memory_source_line = 0;
 uint32_t g_last_memory_r3 = 0;
 uint32_t g_last_memory_r4 = 0;
 uint32_t g_last_memory_r5 = 0;
@@ -130,12 +134,20 @@ uint32_t AlignUp(uint32_t value, uint32_t alignment)
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
-void RecordGuestMemoryAccess(PPCContext& ctx, uint64_t address, uint32_t size, bool write)
+void RecordGuestMemoryAccess(
+    PPCContext& ctx,
+    uint64_t address,
+    uint32_t size,
+    bool write,
+    const char* source_file,
+    int source_line)
 {
     g_last_guest_memory_address = address;
     g_last_guest_memory_size = size;
     g_last_guest_memory_write = write;
     g_has_last_guest_memory_access = true;
+    g_last_guest_memory_source_file = source_file;
+    g_last_guest_memory_source_line = source_line;
     g_last_memory_r3 = ctx.r3.u32;
     g_last_memory_r4 = ctx.r4.u32;
     g_last_memory_r5 = ctx.r5.u32;
@@ -154,59 +166,65 @@ void RaiseGuestMemoryFault(uint64_t address, bool write)
     RaiseException(EXCEPTION_ACCESS_VIOLATION, 0, 2, details);
 }
 
-void CheckGuestMemoryAccess(PPCContext& ctx, uint64_t address, uint32_t size, bool write)
+void CheckGuestMemoryAccess(
+    PPCContext& ctx,
+    uint64_t address,
+    uint32_t size,
+    bool write,
+    const char* source_file,
+    int source_line)
 {
-    RecordGuestMemoryAccess(ctx, address, size, write);
+    RecordGuestMemoryAccess(ctx, address, size, write, source_file, source_line);
     if (address + size < address || address + size > 0x100000000ull) {
         RaiseGuestMemoryFault(address, write);
     }
 }
 
-uint8_t Skate3PpcLoadU8(PPCContext& ctx, uint8_t* base, uint64_t address)
+uint8_t Skate3PpcLoadU8(PPCContext& ctx, uint8_t* base, uint64_t address, const char* source_file, int source_line)
 {
-    CheckGuestMemoryAccess(ctx, address, 1, false);
+    CheckGuestMemoryAccess(ctx, address, 1, false, source_file, source_line);
     return *reinterpret_cast<volatile uint8_t*>(base + address);
 }
 
-uint16_t Skate3PpcLoadU16(PPCContext& ctx, uint8_t* base, uint64_t address)
+uint16_t Skate3PpcLoadU16(PPCContext& ctx, uint8_t* base, uint64_t address, const char* source_file, int source_line)
 {
-    CheckGuestMemoryAccess(ctx, address, 2, false);
+    CheckGuestMemoryAccess(ctx, address, 2, false, source_file, source_line);
     return __builtin_bswap16(*reinterpret_cast<volatile uint16_t*>(base + address));
 }
 
-uint32_t Skate3PpcLoadU32(PPCContext& ctx, uint8_t* base, uint64_t address)
+uint32_t Skate3PpcLoadU32(PPCContext& ctx, uint8_t* base, uint64_t address, const char* source_file, int source_line)
 {
-    CheckGuestMemoryAccess(ctx, address, 4, false);
+    CheckGuestMemoryAccess(ctx, address, 4, false, source_file, source_line);
     return __builtin_bswap32(*reinterpret_cast<volatile uint32_t*>(base + address));
 }
 
-uint64_t Skate3PpcLoadU64(PPCContext& ctx, uint8_t* base, uint64_t address)
+uint64_t Skate3PpcLoadU64(PPCContext& ctx, uint8_t* base, uint64_t address, const char* source_file, int source_line)
 {
-    CheckGuestMemoryAccess(ctx, address, 8, false);
+    CheckGuestMemoryAccess(ctx, address, 8, false, source_file, source_line);
     return __builtin_bswap64(*reinterpret_cast<volatile uint64_t*>(base + address));
 }
 
-void Skate3PpcStoreU8(PPCContext& ctx, uint8_t* base, uint64_t address, uint8_t value)
+void Skate3PpcStoreU8(PPCContext& ctx, uint8_t* base, uint64_t address, uint8_t value, const char* source_file, int source_line)
 {
-    CheckGuestMemoryAccess(ctx, address, 1, true);
+    CheckGuestMemoryAccess(ctx, address, 1, true, source_file, source_line);
     *reinterpret_cast<volatile uint8_t*>(base + address) = value;
 }
 
-void Skate3PpcStoreU16(PPCContext& ctx, uint8_t* base, uint64_t address, uint16_t value)
+void Skate3PpcStoreU16(PPCContext& ctx, uint8_t* base, uint64_t address, uint16_t value, const char* source_file, int source_line)
 {
-    CheckGuestMemoryAccess(ctx, address, 2, true);
+    CheckGuestMemoryAccess(ctx, address, 2, true, source_file, source_line);
     *reinterpret_cast<volatile uint16_t*>(base + address) = __builtin_bswap16(value);
 }
 
-void Skate3PpcStoreU32(PPCContext& ctx, uint8_t* base, uint64_t address, uint32_t value)
+void Skate3PpcStoreU32(PPCContext& ctx, uint8_t* base, uint64_t address, uint32_t value, const char* source_file, int source_line)
 {
-    CheckGuestMemoryAccess(ctx, address, 4, true);
+    CheckGuestMemoryAccess(ctx, address, 4, true, source_file, source_line);
     *reinterpret_cast<volatile uint32_t*>(base + address) = __builtin_bswap32(value);
 }
 
-void Skate3PpcStoreU64(PPCContext& ctx, uint8_t* base, uint64_t address, uint64_t value)
+void Skate3PpcStoreU64(PPCContext& ctx, uint8_t* base, uint64_t address, uint64_t value, const char* source_file, int source_line)
 {
-    CheckGuestMemoryAccess(ctx, address, 8, true);
+    CheckGuestMemoryAccess(ctx, address, 8, true, source_file, source_line);
     *reinterpret_cast<volatile uint64_t*>(base + address) = __builtin_bswap64(value);
 }
 
@@ -383,6 +401,8 @@ int CaptureGuestException(EXCEPTION_POINTERS* exception)
     g_last_guest_exception.guest_memory_address = g_last_guest_memory_address;
     g_last_guest_exception.guest_memory_size = g_last_guest_memory_size;
     g_last_guest_exception.guest_memory_write = g_last_guest_memory_write;
+    g_last_guest_exception.guest_memory_source_file = g_last_guest_memory_source_file;
+    g_last_guest_exception.guest_memory_source_line = g_last_guest_memory_source_line;
     g_last_guest_exception.memory_r3 = g_last_memory_r3;
     g_last_guest_exception.memory_r4 = g_last_memory_r4;
     g_last_guest_exception.memory_r5 = g_last_memory_r5;
@@ -406,6 +426,8 @@ bool CallGeneratedEntry(PPCFunc* entry, PPCContext& ctx, uint8_t* guest_base)
 {
     g_last_guest_exception = {};
     g_has_last_guest_memory_access = false;
+    g_last_guest_memory_source_file = nullptr;
+    g_last_guest_memory_source_line = 0;
     g_exception_context = &ctx;
 
     __try {
@@ -521,7 +543,21 @@ void AppendGuestMemorySnapshot(std::ostringstream& message)
         << (g_last_guest_exception.guest_memory_write ? "write" : "read")
         << " " << std::dec << g_last_guest_exception.guest_memory_size
         << " byte(s) at guest 0x" << std::hex << std::uppercase
-        << g_last_guest_exception.guest_memory_address << "\n"
+        << g_last_guest_exception.guest_memory_address << "\n";
+
+    if (g_last_guest_exception.guest_memory_source_file != nullptr) {
+        const char* source_name = g_last_guest_exception.guest_memory_source_file;
+        for (const char* current = source_name; *current != '\0'; ++current) {
+            if (*current == '\\' || *current == '/') {
+                source_name = current + 1;
+            }
+        }
+
+        message << "Memory source: " << source_name
+            << ":" << std::dec << g_last_guest_exception.guest_memory_source_line << "\n";
+    }
+
+    message << std::hex << std::uppercase
         << "Memory r3-r7: 0x" << std::setw(8) << std::setfill('0') << g_last_guest_exception.memory_r3
         << " 0x" << std::setw(8) << g_last_guest_exception.memory_r4
         << " 0x" << std::setw(8) << g_last_guest_exception.memory_r5

@@ -8,15 +8,31 @@
 
 struct PPCContext;
 
+void sub_82F274E4(PPCContext& ctx, uint8_t* base);
+void sub_82F274E8(PPCContext& ctx, uint8_t* base);
+void sub_82F274EC(PPCContext& ctx, uint8_t* base);
+void sub_82F274F0(PPCContext& ctx, uint8_t* base);
+void sub_82F274F4(PPCContext& ctx, uint8_t* base);
+void sub_82F274F8(PPCContext& ctx, uint8_t* base);
+void sub_82F274FC(PPCContext& ctx, uint8_t* base);
+void sub_82F27500(PPCContext& ctx, uint8_t* base);
+void sub_82F27504(PPCContext& ctx, uint8_t* base);
+void sub_82F27508(PPCContext& ctx, uint8_t* base);
+void sub_82F2750C(PPCContext& ctx, uint8_t* base);
+void sub_82F27510(PPCContext& ctx, uint8_t* base);
+void sub_82F27514(PPCContext& ctx, uint8_t* base);
+void sub_82F27518(PPCContext& ctx, uint8_t* base);
+void sub_82F2751C(PPCContext& ctx, uint8_t* base);
+
 namespace runtime::boot {
-uint8_t Skate3PpcLoadU8(PPCContext& ctx, uint8_t* base, uint64_t address);
-uint16_t Skate3PpcLoadU16(PPCContext& ctx, uint8_t* base, uint64_t address);
-uint32_t Skate3PpcLoadU32(PPCContext& ctx, uint8_t* base, uint64_t address);
-uint64_t Skate3PpcLoadU64(PPCContext& ctx, uint8_t* base, uint64_t address);
-void Skate3PpcStoreU8(PPCContext& ctx, uint8_t* base, uint64_t address, uint8_t value);
-void Skate3PpcStoreU16(PPCContext& ctx, uint8_t* base, uint64_t address, uint16_t value);
-void Skate3PpcStoreU32(PPCContext& ctx, uint8_t* base, uint64_t address, uint32_t value);
-void Skate3PpcStoreU64(PPCContext& ctx, uint8_t* base, uint64_t address, uint64_t value);
+uint8_t Skate3PpcLoadU8(PPCContext& ctx, uint8_t* base, uint64_t address, const char* source_file, int source_line);
+uint16_t Skate3PpcLoadU16(PPCContext& ctx, uint8_t* base, uint64_t address, const char* source_file, int source_line);
+uint32_t Skate3PpcLoadU32(PPCContext& ctx, uint8_t* base, uint64_t address, const char* source_file, int source_line);
+uint64_t Skate3PpcLoadU64(PPCContext& ctx, uint8_t* base, uint64_t address, const char* source_file, int source_line);
+void Skate3PpcStoreU8(PPCContext& ctx, uint8_t* base, uint64_t address, uint8_t value, const char* source_file, int source_line);
+void Skate3PpcStoreU16(PPCContext& ctx, uint8_t* base, uint64_t address, uint16_t value, const char* source_file, int source_line);
+void Skate3PpcStoreU32(PPCContext& ctx, uint8_t* base, uint64_t address, uint32_t value, const char* source_file, int source_line);
+void Skate3PpcStoreU64(PPCContext& ctx, uint8_t* base, uint64_t address, uint64_t value, const char* source_file, int source_line);
 }
 
 #define __restrict__
@@ -66,13 +82,13 @@ inline bool skate3_recomp_sync_bool_compare_and_swap(uint64_t* ptr, int64_t expe
 #define __sync_bool_compare_and_swap(ptr, expected, desired) \
     skate3_recomp_sync_bool_compare_and_swap((ptr), (expected), (desired))
 
-#define PPC_LOAD_U8(x) runtime::boot::Skate3PpcLoadU8(ctx, base, static_cast<uint64_t>(x))
-#define PPC_LOAD_U16(x) runtime::boot::Skate3PpcLoadU16(ctx, base, static_cast<uint64_t>(x))
-#define PPC_LOAD_U32(x) runtime::boot::Skate3PpcLoadU32(ctx, base, static_cast<uint64_t>(x))
-#define PPC_LOAD_U64(x) runtime::boot::Skate3PpcLoadU64(ctx, base, static_cast<uint64_t>(x))
-#define PPC_STORE_U8(x, y) runtime::boot::Skate3PpcStoreU8(ctx, base, static_cast<uint64_t>(x), static_cast<uint8_t>(y))
-#define PPC_STORE_U16(x, y) runtime::boot::Skate3PpcStoreU16(ctx, base, static_cast<uint64_t>(x), static_cast<uint16_t>(y))
-#define PPC_STORE_U32(x, y) runtime::boot::Skate3PpcStoreU32(ctx, base, static_cast<uint64_t>(x), static_cast<uint32_t>(y))
-#define PPC_STORE_U64(x, y) runtime::boot::Skate3PpcStoreU64(ctx, base, static_cast<uint64_t>(x), static_cast<uint64_t>(y))
+#define PPC_LOAD_U8(x) runtime::boot::Skate3PpcLoadU8(ctx, base, static_cast<uint64_t>(x), __FILE__, __LINE__)
+#define PPC_LOAD_U16(x) runtime::boot::Skate3PpcLoadU16(ctx, base, static_cast<uint64_t>(x), __FILE__, __LINE__)
+#define PPC_LOAD_U32(x) runtime::boot::Skate3PpcLoadU32(ctx, base, static_cast<uint64_t>(x), __FILE__, __LINE__)
+#define PPC_LOAD_U64(x) runtime::boot::Skate3PpcLoadU64(ctx, base, static_cast<uint64_t>(x), __FILE__, __LINE__)
+#define PPC_STORE_U8(x, y) runtime::boot::Skate3PpcStoreU8(ctx, base, static_cast<uint64_t>(x), static_cast<uint8_t>(y), __FILE__, __LINE__)
+#define PPC_STORE_U16(x, y) runtime::boot::Skate3PpcStoreU16(ctx, base, static_cast<uint64_t>(x), static_cast<uint16_t>(y), __FILE__, __LINE__)
+#define PPC_STORE_U32(x, y) runtime::boot::Skate3PpcStoreU32(ctx, base, static_cast<uint64_t>(x), static_cast<uint32_t>(y), __FILE__, __LINE__)
+#define PPC_STORE_U64(x, y) runtime::boot::Skate3PpcStoreU64(ctx, base, static_cast<uint64_t>(x), static_cast<uint64_t>(y), __FILE__, __LINE__)
 
 #endif
