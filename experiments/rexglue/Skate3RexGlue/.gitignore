@@ -1,0 +1,14 @@
+/out/
+
+# Generated from the local XEX; do not publish game-derived code.
+/generated/default/
+
+# Local game/cache material.
+/assets/
+*.iso
+*.xex
+*.xexp
+
+# Logs and crash dumps.
+*.log
+*.dmp

@@ -1,6 +1,7 @@
 // launcher/src/main.cpp
 #include <filesystem>
 #include <string>
+#include <vector>
 #include <windows.h>
 #include <gdiplus.h>
 #include <commdlg.h>
@@ -237,19 +238,97 @@ static bool ValidateAndImport(HWND hwnd) {
     return true;
 }
 
+static std::string QuoteArg(const fs::path& path) {
+    std::string value = path.string();
+    std::string quoted = "\"";
+    for (char c : value) {
+        if (c == '"' || c == '\\') quoted.push_back('\\');
+        quoted.push_back(c);
+    }
+    quoted.push_back('"');
+    return quoted;
+}
+
+static fs::path FindReXGlueExe() {
+    std::vector<fs::path> candidates = {
+        g_app.repo_root / "build-rexglue" / "skate3rexglue.exe",
+        g_app.repo_root / "experiments" / "rexglue" / "Skate3RexGlue" /
+            "out" / "build" / "win-amd64-release" / "skate3rexglue.exe",
+        g_app.repo_root.parent_path() / "Skate-3-ReXGlue-Experiment" / "Skate3RexGlue" /
+            "out" / "build" / "win-amd64-release" / "skate3rexglue.exe",
+        fs::current_path() / "skate3rexglue.exe",
+    };
+
+    char exe_buf[MAX_PATH]{};
+    if (GetModuleFileNameA(nullptr, exe_buf, MAX_PATH)) {
+        candidates.push_back(fs::path(exe_buf).parent_path() / "skate3rexglue.exe");
+    }
+
+    for (const auto& candidate : candidates) {
+        std::error_code ec;
+        if (fs::exists(candidate, ec) && fs::is_regular_file(candidate, ec)) {
+            return fs::absolute(candidate, ec);
+        }
+    }
+
+    return {};
+}
+
+static bool LaunchReXGlueRuntime(HWND hwnd, const std::string& content_root) {
+    fs::path exe = FindReXGlueExe();
+    if (exe.empty()) {
+        ShowErrorDialog(
+            "ReXGlue runtime executable was not found.\n\n"
+            "Expected build output near:\n"
+            "experiments\\rexglue\\Skate3RexGlue\\out\\build\\win-amd64-release\\skate3rexglue.exe\n"
+            "or:\n"
+            "C:\\Users\\HelmXGaming\\Documents\\GitHub\\Skate-3-ReXGlue-Experiment\\Skate3RexGlue\\out\\build\\win-amd64-release\\skate3rexglue.exe");
+        return false;
+    }
+
+    fs::path content = fs::absolute(content_root);
+    std::string cmd = QuoteArg(exe) + " --game_data_root " + QuoteArg(content);
+    std::string mutable_cmd = cmd;
+
+    STARTUPINFOA si{};
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi{};
+    std::string work_dir = exe.parent_path().string();
+
+    BOOL ok = CreateProcessA(
+        nullptr,
+        mutable_cmd.data(),
+        nullptr,
+        nullptr,
+        FALSE,
+        0,
+        nullptr,
+        work_dir.c_str(),
+        &si,
+        &pi);
+
+    if (!ok) {
+        ShowErrorDialog("Failed to launch ReXGlue runtime.\nCreateProcess error " +
+                        std::to_string(GetLastError()));
+        return false;
+    }
+
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    g_app.detail = "ReXGlue standalone";
+    return true;
+}
+
 static void LaunchGame(HWND hwnd) {
     if (!ValidateAndImport(hwnd)) return;
 
-    g_app.status = "Launching runtime...";
+    g_app.status = "Launching ReXGlue runtime...";
     InvalidateRect(hwnd, nullptr, FALSE);
     UpdateWindow(hwnd);
 
-    auto boot = runtime::boot::LaunchFromContentRoot(g_app.content_root);
-    g_app.status = boot.ok ? "Boot reached runtime." : "Boot failed.";
+    bool launched = LaunchReXGlueRuntime(hwnd, g_app.content_root);
+    g_app.status = launched ? "Runtime launched." : "Launch failed.";
     InvalidateRect(hwnd, nullptr, FALSE);
-
-    UINT icon = boot.ok ? MB_ICONINFORMATION : MB_ICONERROR;
-    MessageBoxA(hwnd, boot.message.c_str(), "Skate 3 Recomp Boot", MB_OK | icon);
 }
 
 static Action HitTestMain(int x, int y) {
