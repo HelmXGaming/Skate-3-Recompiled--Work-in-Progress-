@@ -48,6 +48,36 @@ registers = ["r3", "r11", "r9"]
 return_on_true = true
 
 [[entrypoint.midasm_hook]]
+address = 0x828F5438
+name = "Skate3GuardHashTableHeader"
+registers = ["r3"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x828F545C
+name = "Skate3GuardHashNodeRead"
+registers = ["r3", "r7"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x828F5480
+name = "Skate3GuardHashStringCompare"
+registers = ["r9", "r11", "r10"]
+jump_address_on_true = 0x828F54A0
+
+[[entrypoint.midasm_hook]]
+address = 0x828F54CC
+name = "Skate3GuardHashMatchNodeFlags"
+registers = ["r3", "r7"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x828F54D4
+name = "Skate3GuardHashMatchTableFlags"
+registers = ["r3", "r10"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
 address = 0x828F578C
 name = "Skate3GuardStringByteRead"
 registers = ["r10", "r11", "r4"]
@@ -153,6 +183,36 @@ name = "Skate3GuardValueListHeader"
 registers = ["r4", "r29"]
 after_instruction = true
 jump_address_on_true = 0x828EE4D4
+
+[[entrypoint.midasm_hook]]
+address = 0x828ED008
+name = "Skate3GuardValueWriterCursor"
+registers = ["r31"]
+jump_address_on_true = 0x828ED014
+
+[[entrypoint.midasm_hook]]
+address = 0x82F22E70
+name = "Skate3GuardSearchStringByte"
+registers = ["r3", "r6"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82F22E8C
+name = "Skate3GuardSearchStringNextByte"
+registers = ["r3", "r6"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82F22E9C
+name = "Skate3GuardSearchStringNextByte"
+registers = ["r3", "r6"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82B43338
+name = "Skate3GuardContainerListHeader"
+registers = ["r3", "r31"]
+jump_address_on_true = 0x82B433A4
 
 [[entrypoint.midasm_hook]]
 address = 0x828F07BC

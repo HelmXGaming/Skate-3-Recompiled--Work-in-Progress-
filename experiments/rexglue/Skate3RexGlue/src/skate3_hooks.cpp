@@ -58,6 +58,20 @@ bool CanWriteGuestRange(uint32_t address, uint32_t size) {
          access == rex::memory::PageAccess::kExecuteReadWrite;
 }
 
+bool ReadGuestU32(uint32_t address, uint32_t& value) {
+  if (!CanReadGuestRange(address, sizeof(uint32_t))) {
+    return false;
+  }
+
+  auto* runtime = rex::Runtime::instance();
+  if (!runtime || !runtime->memory()) {
+    return false;
+  }
+
+  value = __builtin_bswap32(*runtime->memory()->TranslateVirtual<const uint32_t*>(address));
+  return true;
+}
+
 }  // namespace
 
 bool Skate3GuardListClearRange(PPCRegister& r8, PPCRegister& r7) {
@@ -168,6 +182,75 @@ bool Skate3GuardHashBucketRead(PPCRegister& r3, PPCRegister& r11, PPCRegister& r
 
   if (!readable) {
     REXLOG_WARN("Returning null for unreadable Skate 3 hash bucket {:08X}", address);
+    r3.u64 = 0;
+    return true;
+  }
+
+  return false;
+}
+
+bool Skate3GuardHashTableHeader(PPCRegister& r3) {
+  uint32_t table = 0;
+  if (!ReadGuestU32(r3.u32 + 16, table) ||
+      !CanReadGuestRange(table, sizeof(uint32_t)) ||
+      !CanReadGuestRange(table + 8, sizeof(uint32_t))) {
+    REXLOG_WARN("Returning null for Skate 3 hash table with unreadable owner {:08X}",
+                r3.u32);
+    r3.u64 = 0;
+    return true;
+  }
+
+  return false;
+}
+
+bool Skate3GuardHashNodeRead(PPCRegister& r3, PPCRegister& r7) {
+  const uint32_t node = r7.u32;
+  if (!CanReadGuestRange(node, 20)) {
+    REXLOG_WARN("Returning null for unreadable Skate 3 hash node {:08X}", node);
+    r3.u64 = 0;
+    return true;
+  }
+
+  return false;
+}
+
+bool Skate3GuardHashStringCompare(PPCRegister& r9, PPCRegister& r11, PPCRegister& r10) {
+  const uint32_t left = r11.u32;
+  const uint32_t right = r10.u32;
+  if (!CanReadGuestRange(left, sizeof(uint8_t)) ||
+      !CanReadGuestRange(right, sizeof(uint8_t))) {
+    REXLOG_WARN(
+        "Treating Skate 3 hash string compare as mismatch for unreadable bytes {:08X} / "
+        "{:08X}",
+        left, right);
+    r9.u64 = 1;
+    return true;
+  }
+
+  return false;
+}
+
+bool Skate3GuardHashMatchNodeFlags(PPCRegister& r3, PPCRegister& r7) {
+  const uint32_t node_flags = r7.u32 + 5;
+  if (!CanReadGuestRange(node_flags, sizeof(uint8_t)) ||
+      !CanWriteGuestRange(node_flags, sizeof(uint8_t)) ||
+      !CanReadGuestRange(r3.u32 + 16, sizeof(uint32_t))) {
+    REXLOG_WARN(
+        "Returning null for Skate 3 hash match with unreadable node flags {:08X} "
+        "or table owner {:08X}",
+        node_flags, r3.u32);
+    r3.u64 = 0;
+    return true;
+  }
+
+  return false;
+}
+
+bool Skate3GuardHashMatchTableFlags(PPCRegister& r3, PPCRegister& r10) {
+  const uint32_t table_flags = r10.u32 + 20;
+  if (!CanReadGuestRange(table_flags, sizeof(uint8_t))) {
+    REXLOG_WARN("Returning null for Skate 3 hash match with unreadable table flags {:08X}",
+                table_flags);
     r3.u64 = 0;
     return true;
   }
@@ -364,6 +447,55 @@ bool Skate3GuardValueListHeader(PPCRegister& r4, PPCRegister& r29) {
   if (!CanReadGuestRange(header, 12)) {
     REXLOG_WARN("Falling back for Skate 3 value list with unreadable header {:08X}", header);
     r29.u64 = 0;
+    return true;
+  }
+
+  return false;
+}
+
+bool Skate3GuardValueWriterCursor(PPCRegister& r31) {
+  const uint32_t cursor_slot = r31.u32 + 8;
+  if (!CanReadGuestRange(cursor_slot, sizeof(uint32_t)) ||
+      !CanWriteGuestRange(cursor_slot, sizeof(uint32_t))) {
+    REXLOG_WARN("Skipping Skate 3 value writer cursor update at unreadable slot {:08X}",
+                cursor_slot);
+    return true;
+  }
+
+  return false;
+}
+
+bool Skate3GuardSearchStringByte(PPCRegister& r3, PPCRegister& r6) {
+  const uint32_t address = r3.u32;
+  if (!CanReadGuestRange(address, sizeof(uint8_t))) {
+    REXLOG_WARN("Returning null for Skate 3 string scan at unreadable byte {:08X}",
+                address);
+    r3.u64 = 0;
+    r6.u64 = 0;
+    return true;
+  }
+
+  return false;
+}
+
+bool Skate3GuardSearchStringNextByte(PPCRegister& r3, PPCRegister& r6) {
+  const uint32_t address = r3.u32 + 1;
+  if (!CanReadGuestRange(address, sizeof(uint8_t))) {
+    REXLOG_WARN("Returning null for Skate 3 string scan next byte {:08X}", address);
+    r3.u64 = 0;
+    r6.u64 = 0;
+    return true;
+  }
+
+  return false;
+}
+
+bool Skate3GuardContainerListHeader(PPCRegister& r3, PPCRegister& r31) {
+  if (!CanReadGuestRange(r31.u32, sizeof(uint32_t)) ||
+      !CanReadGuestRange(r31.u32 + 4, sizeof(uint16_t))) {
+    REXLOG_WARN("Returning null for Skate 3 container list with unreadable header {:08X}",
+                r31.u32);
+    r3.u64 = 0;
     return true;
   }
 

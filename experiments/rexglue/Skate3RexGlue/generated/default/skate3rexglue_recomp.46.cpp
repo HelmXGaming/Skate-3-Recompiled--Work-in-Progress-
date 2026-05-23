@@ -5457,6 +5457,8 @@ loc_828ECF6C:
 	return;
 }
 
+extern bool Skate3GuardValueWriterCursor(PPCRegister& r31);
+
 DEFINE_REX_FUNC(sub_828ECF88) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
@@ -5532,11 +5534,17 @@ loc_828ED004:
 	sub_828F4220(ctx, base);
 loc_828ED008:
 	// lwz r11,8(r31)
+	if (Skate3GuardValueWriterCursor(ctx.r31)) {
+		goto loc_828ED014;
+	}
+	else {
+	}
 	ctx.r11.u64 = REX_LOAD_U32(ctx.r31.u32 + 8);
 	// addi r11,r11,8
 	ctx.r11.s64 = ctx.r11.s64 + 8;
 	// stw r11,8(r31)
 	REX_STORE_U32(ctx.r31.u32 + 8, ctx.r11.u32);
+loc_828ED014:
 	// addi r1,r1,112
 	ctx.r1.s64 = ctx.r1.s64 + 112;
 	// lwz r12,-8(r1)
@@ -24817,7 +24825,17 @@ loc_828F53DC:
 	return;
 }
 
+extern bool Skate3GuardHashTableHeader(PPCRegister& r3);
+
 extern bool Skate3GuardHashBucketRead(PPCRegister& r3, PPCRegister& r11, PPCRegister& r9);
+
+extern bool Skate3GuardHashNodeRead(PPCRegister& r3, PPCRegister& r7);
+
+extern bool Skate3GuardHashStringCompare(PPCRegister& r9, PPCRegister& r11, PPCRegister& r10);
+
+extern bool Skate3GuardHashMatchNodeFlags(PPCRegister& r3, PPCRegister& r7);
+
+extern bool Skate3GuardHashMatchTableFlags(PPCRegister& r3, PPCRegister& r10);
 
 DEFINE_REX_FUNC(sub_828F53E8) {
 	REX_FUNC_PROLOGUE();
@@ -24867,6 +24885,11 @@ loc_828F5414:
 	if (!ctx.cr6.lt) goto loc_828F5414;
 loc_828F5438:
 	// lwz r10,16(r3)
+	if (Skate3GuardHashTableHeader(ctx.r3)) {
+		return;
+	}
+	else {
+	}
 	ctx.r10.u64 = REX_LOAD_U32(ctx.r3.u32 + 16);
 	// lwz r11,8(r10)
 	ctx.r11.u64 = REX_LOAD_U32(ctx.r10.u32 + 8);
@@ -24891,6 +24914,11 @@ loc_828F5438:
 	if (ctx.cr6.eq) goto loc_828F54B4;
 loc_828F545C:
 	// lwz r11,12(r7)
+	if (Skate3GuardHashNodeRead(ctx.r3, ctx.r7)) {
+		return;
+	}
+	else {
+	}
 	ctx.r11.u64 = REX_LOAD_U32(ctx.r7.u32 + 12);
 	// cmplw cr6,r11,r5
 	ctx.cr6.compare<uint32_t>(ctx.r11.u32, ctx.r5.u32, ctx.xer);
@@ -24910,6 +24938,11 @@ loc_828F545C:
 	ctx.r8.u64 = ctx.r4.u64 + ctx.r5.u64;
 loc_828F5480:
 	// lbz r9,0(r11)
+	if (Skate3GuardHashStringCompare(ctx.r9, ctx.r11, ctx.r10)) {
+		goto loc_828F54A0;
+	}
+	else {
+	}
 	ctx.r9.u64 = REX_LOAD_U8(ctx.r11.u32 + 0);
 	// lbz r31,0(r10)
 	ctx.r31.u64 = REX_LOAD_U8(ctx.r10.u32 + 0);
@@ -24954,10 +24987,20 @@ loc_828F54B4:
 	return;
 loc_828F54CC:
 	// lwz r10,16(r3)
+	if (Skate3GuardHashMatchNodeFlags(ctx.r3, ctx.r7)) {
+		return;
+	}
+	else {
+	}
 	ctx.r10.u64 = REX_LOAD_U32(ctx.r3.u32 + 16);
 	// lbz r11,5(r7)
 	ctx.r11.u64 = REX_LOAD_U8(ctx.r7.u32 + 5);
 	// lbz r9,20(r10)
+	if (Skate3GuardHashMatchTableFlags(ctx.r3, ctx.r10)) {
+		return;
+	}
+	else {
+	}
 	ctx.r9.u64 = REX_LOAD_U8(ctx.r10.u32 + 20);
 	// andc r8,r11,r9
 	ctx.r8.u64 = ctx.r11.u64 & ~ctx.r9.u64;

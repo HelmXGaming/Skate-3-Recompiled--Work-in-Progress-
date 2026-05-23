@@ -19854,10 +19854,21 @@ loc_82F22E60:
 	return;
 }
 
+extern bool Skate3GuardSearchStringByte(PPCRegister& r3, PPCRegister& r6);
+
+extern bool Skate3GuardSearchStringNextByte(PPCRegister& r3, PPCRegister& r6);
+
+extern bool Skate3GuardSearchStringNextByte(PPCRegister& r3, PPCRegister& r6);
+
 DEFINE_REX_FUNC(sub_82F22E70) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
 	// lbz r6,0(r3)
+	if (Skate3GuardSearchStringByte(ctx.r3, ctx.r6)) {
+		return;
+	}
+	else {
+	}
 	ctx.r6.u64 = REX_LOAD_U8(ctx.r3.u32 + 0);
 	// cmpwi r4,0
 	ctx.cr0.compare<int32_t>(ctx.r4.s32, 0, ctx.xer);
@@ -19873,6 +19884,11 @@ loc_82F22E7C:
 	// beq 0x82f22ea8
 	if (ctx.cr0.eq) goto loc_82F22EA8;
 	// lbzu r6,1(r3)
+	if (Skate3GuardSearchStringNextByte(ctx.r3, ctx.r6)) {
+		return;
+	}
+	else {
+	}
 	ea = 1 + ctx.r3.u32;
 	ctx.r6.u64 = REX_LOAD_U8(ea);
 	ctx.r3.u32 = ea;
@@ -19884,6 +19900,11 @@ loc_82F22E94:
 	// beq 0x82f22ea8
 	if (ctx.cr0.eq) goto loc_82F22EA8;
 	// lbzu r6,1(r3)
+	if (Skate3GuardSearchStringNextByte(ctx.r3, ctx.r6)) {
+		return;
+	}
+	else {
+	}
 	ea = 1 + ctx.r3.u32;
 	ctx.r6.u64 = REX_LOAD_U8(ea);
 	ctx.r3.u32 = ea;

@@ -58,6 +58,7 @@ struct AppState {
     LauncherConfig config;
     std::string source;
     std::string content_root;
+    std::string rexglue_root;
     std::string status = "No ISO selected.";
     std::string detail = "Xbox 360";
     Screen screen = Screen::Main;
@@ -164,6 +165,7 @@ static void SelectIso(HWND hwnd) {
 
     g_app.source = picked;
     g_app.content_root.clear();
+    g_app.rexglue_root.clear();
     g_app.config.game_root = picked;
     SaveConfig(g_app.config_path.string(), g_app.config);
     UpdateStatusFromSource();
@@ -227,9 +229,11 @@ static bool ValidateAndImport(HWND hwnd) {
         SaveConfig(g_app.config_path.string(), g_app.config);
         hal::fs::set_game_root(g_app.config.cache_dir);
         g_app.content_root = fs::absolute(g_app.config.cache_dir).string();
+        g_app.rexglue_root = fs::absolute(source).string();
     } else {
         hal::fs::set_game_root(source);
         g_app.content_root = fs::absolute(source).string();
+        g_app.rexglue_root = g_app.content_root;
     }
 
     g_app.source = source;
@@ -326,7 +330,8 @@ static void LaunchGame(HWND hwnd) {
     InvalidateRect(hwnd, nullptr, FALSE);
     UpdateWindow(hwnd);
 
-    bool launched = LaunchReXGlueRuntime(hwnd, g_app.content_root);
+    const std::string& runtime_root = g_app.rexglue_root.empty() ? g_app.content_root : g_app.rexglue_root;
+    bool launched = LaunchReXGlueRuntime(hwnd, runtime_root);
     g_app.status = launched ? "Runtime launched." : "Launch failed.";
     InvalidateRect(hwnd, nullptr, FALSE);
 }

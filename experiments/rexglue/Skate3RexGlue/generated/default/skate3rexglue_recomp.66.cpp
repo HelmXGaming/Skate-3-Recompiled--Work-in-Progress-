@@ -32010,6 +32010,8 @@ loc_82B43300:
 	return;
 }
 
+extern bool Skate3GuardContainerListHeader(PPCRegister& r3, PPCRegister& r31);
+
 DEFINE_REX_FUNC(sub_82B43318) {
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
@@ -32034,6 +32036,11 @@ DEFINE_REX_FUNC(sub_82B43318) {
 	ctx.lr = 0x82B43338;
 	sub_82B461D0(ctx, base);
 	// lhz r11,4(r31)
+	if (Skate3GuardContainerListHeader(ctx.r3, ctx.r31)) {
+		goto loc_82B433A4;
+	}
+	else {
+	}
 	ctx.r11.u64 = REX_LOAD_U16(ctx.r31.u32 + 4);
 	// cmplw cr6,r3,r11
 	ctx.cr6.compare<uint32_t>(ctx.r3.u32, ctx.r11.u32, ctx.xer);
