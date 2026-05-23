@@ -1,0 +1,4 @@
+C:/Users/HelmXGaming/Documents/GitHub/Skate-3-Recomp-PC/experiments/rexglue/Skate3RexGlue/out/build/win-amd64-release/CMakeFiles/skate3rexglue_codegen.dir
+C:/Users/HelmXGaming/Documents/GitHub/Skate-3-Recomp-PC/experiments/rexglue/Skate3RexGlue/out/build/win-amd64-release/CMakeFiles/skate3rexglue.dir
+C:/Users/HelmXGaming/Documents/GitHub/Skate-3-Recomp-PC/experiments/rexglue/Skate3RexGlue/out/build/win-amd64-release/CMakeFiles/edit_cache.dir
+C:/Users/HelmXGaming/Documents/GitHub/Skate-3-Recomp-PC/experiments/rexglue/Skate3RexGlue/out/build/win-amd64-release/CMakeFiles/rebuild_cache.dir
