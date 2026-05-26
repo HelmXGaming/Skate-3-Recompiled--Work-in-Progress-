@@ -11489,6 +11489,8 @@ loc_828B26EC:
 	return;
 }
 
+extern bool Skate3GuardContainerOwnerList(PPCRegister& r3);
+
 DEFINE_REX_FUNC(sub_828B26F8) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
@@ -11517,6 +11519,11 @@ DEFINE_REX_FUNC(sub_828B26F8) {
 	ctx.lr = 0x828B2720;
 	sub_82B43318(ctx, base);
 	// lwz r9,8(r3)
+	if (Skate3GuardContainerOwnerList(ctx.r3)) {
+		goto loc_828B28DC;
+	}
+	else {
+	}
 	ctx.r9.u64 = REX_LOAD_U32(ctx.r3.u32 + 8);
 	// mr r28,r3
 	ctx.r28.u64 = ctx.r3.u64;

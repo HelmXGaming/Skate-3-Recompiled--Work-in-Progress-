@@ -52110,6 +52110,8 @@ DEFINE_REX_FUNC(sub_8293F0C8) {
 	return;
 }
 
+extern bool Skate3GuardFramePumpCallback(PPCRegister& r3);
+
 DEFINE_REX_FUNC(sub_8293F0E8) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
@@ -52379,6 +52381,11 @@ loc_8293F2BC:
 	// lwz r3,-31652(r24)
 	ctx.r3.u64 = REX_LOAD_U32(ctx.r24.u32 + -31652);
 	// mr r30,r3
+	if (Skate3GuardFramePumpCallback(ctx.r3)) {
+		goto loc_8293F348;
+	}
+	else {
+	}
 	ctx.r30.u64 = ctx.r3.u64;
 	// lwz r11,72(r3)
 	ctx.r11.u64 = REX_LOAD_U32(ctx.r3.u32 + 72);
@@ -52438,6 +52445,7 @@ loc_8293F2BC:
 	// bl 0x82eb7610
 	ctx.lr = 0x8293F348;
 	sub_82EB7610(ctx, base);
+loc_8293F348:
 	// b 0x8293f12c
 	goto loc_8293F12C;
 loc_8293F34C:

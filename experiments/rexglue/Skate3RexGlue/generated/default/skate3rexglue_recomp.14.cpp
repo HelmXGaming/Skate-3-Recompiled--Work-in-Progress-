@@ -18152,6 +18152,8 @@ loc_82539144:
 	return;
 }
 
+extern bool Skate3GuardCareerWidgetLink(PPCRegister& r1, PPCRegister& r12, PPCRegister& r14, PPCRegister& r15, PPCRegister& r16, PPCRegister& r17, PPCRegister& r18, PPCRegister& r19, PPCRegister& r20, PPCRegister& r21, PPCRegister& r22, PPCRegister& r23, PPCRegister& r24, PPCRegister& r25, PPCRegister& r26, PPCRegister& r27, PPCRegister& r28, PPCRegister& r29, PPCRegister& r30, PPCRegister& r31);
+
 DEFINE_REX_FUNC(sub_825391B8) {
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
@@ -20807,6 +20809,11 @@ loc_8253A4A0:
 	ctx.r11.u64 = ctx.r29.u64;
 loc_8253A4A4:
 	// lwz r10,456(r31)
+	if (Skate3GuardCareerWidgetLink(ctx.r1, ctx.r12, ctx.r14, ctx.r15, ctx.r16, ctx.r17, ctx.r18, ctx.r19, ctx.r20, ctx.r21, ctx.r22, ctx.r23, ctx.r24, ctx.r25, ctx.r26, ctx.r27, ctx.r28, ctx.r29, ctx.r30, ctx.r31)) {
+		return;
+	}
+	else {
+	}
 	ctx.r10.u64 = REX_LOAD_U32(ctx.r31.u32 + 456);
 	// addi r5,r24,12436
 	ctx.r5.s64 = ctx.r24.s64 + 12436;

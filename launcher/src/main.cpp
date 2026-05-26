@@ -1,5 +1,7 @@
 // launcher/src/main.cpp
+#include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <windows.h>
@@ -76,6 +78,65 @@ struct AppState {
 };
 
 static AppState g_app;
+
+static LONG WINAPI LauncherUnhandledExceptionFilter(EXCEPTION_POINTERS* info) {
+    std::error_code ec;
+    fs::path base = fs::current_path(ec);
+    if (!g_app.repo_root.empty()) {
+        base = g_app.repo_root;
+    }
+
+    std::ofstream crash(base / "skate3_launcher_crash.txt", std::ios::app);
+    if (crash && info && info->ExceptionRecord) {
+        crash << "Exception: 0x" << std::hex << info->ExceptionRecord->ExceptionCode << "\n";
+        crash << "Address: 0x" << reinterpret_cast<uintptr_t>(info->ExceptionRecord->ExceptionAddress)
+              << "\n";
+        crash << "status=" << g_app.status << "\n";
+        crash << "source=" << g_app.source << "\n";
+        crash << "content_root=" << g_app.content_root << "\n";
+        crash << "rexglue_root=" << g_app.rexglue_root << "\n";
+        crash << "----------\n";
+    }
+
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
+static bool IsExtractedGameRoot(const fs::path& root) {
+    std::error_code ec;
+    return fs::is_directory(root, ec) && fs::is_regular_file(root / "default.xex", ec);
+}
+
+static fs::path ResolveReXGlueGameRoot(const fs::path& imported_root) {
+    const fs::path repo_game = g_app.repo_root / "game";
+    if (IsExtractedGameRoot(repo_game) && fs::is_regular_file(repo_game / "Skate3.iso")) {
+        return fs::absolute(repo_game);
+    }
+
+    if (IsExtractedGameRoot(imported_root)) {
+        return fs::absolute(imported_root);
+    }
+
+    return fs::absolute(imported_root);
+}
+
+static void WriteLaunchTrace(const fs::path& exe,
+                             const fs::path& work_dir,
+                             const fs::path& content,
+                             const std::string& command) {
+    std::error_code ec;
+    fs::path trace_path = g_app.repo_root / "skate3_launcher_launch.txt";
+    std::ofstream trace(trace_path, std::ios::trunc);
+    if (!trace) return;
+
+    trace << "exe=" << fs::absolute(exe, ec).string() << "\n";
+    trace << "work_dir=" << fs::absolute(work_dir, ec).string() << "\n";
+    trace << "game_data_root=" << fs::absolute(content, ec).string() << "\n";
+    trace << "default_xex=" << (fs::is_regular_file(content / "default.xex", ec) ? "yes" : "no")
+          << "\n";
+    trace << "skate3_iso=" << (fs::is_regular_file(content / "Skate3.iso", ec) ? "yes" : "no")
+          << "\n";
+    trace << "command=" << command << "\n";
+}
 
 static std::wstring Widen(const std::string& value) {
     if (value.empty()) return {};
@@ -229,11 +290,11 @@ static bool ValidateAndImport(HWND hwnd) {
         SaveConfig(g_app.config_path.string(), g_app.config);
         hal::fs::set_game_root(g_app.config.cache_dir);
         g_app.content_root = fs::absolute(g_app.config.cache_dir).string();
-        g_app.rexglue_root = fs::absolute(source).string();
+        g_app.rexglue_root = ResolveReXGlueGameRoot(source).string();
     } else {
         hal::fs::set_game_root(source);
         g_app.content_root = fs::absolute(source).string();
-        g_app.rexglue_root = g_app.content_root;
+        g_app.rexglue_root = ResolveReXGlueGameRoot(source).string();
     }
 
     g_app.source = source;
@@ -291,13 +352,15 @@ static bool LaunchReXGlueRuntime(HWND hwnd, const std::string& content_root) {
     }
 
     fs::path content = fs::absolute(content_root);
-    std::string cmd = QuoteArg(exe) + " --game_data_root " + QuoteArg(content);
+    std::string cmd = QuoteArg(exe) + " --protect_zero=false --game_data_root " +
+                      QuoteArg(content) + " --log_verbose";
     std::string mutable_cmd = cmd;
 
     STARTUPINFOA si{};
     si.cb = sizeof(si);
     PROCESS_INFORMATION pi{};
     std::string work_dir = exe.parent_path().string();
+    WriteLaunchTrace(exe, exe.parent_path(), content, cmd);
 
     BOOL ok = CreateProcessA(
         nullptr,
@@ -632,6 +695,8 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 } // namespace
 
 int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int show_cmd) {
+    SetUnhandledExceptionFilter(LauncherUnhandledExceptionFilter);
+
     hal::sys::init_logging();
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 

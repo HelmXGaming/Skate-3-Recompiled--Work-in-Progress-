@@ -32010,6 +32010,8 @@ loc_82B43300:
 	return;
 }
 
+extern bool Skate3GuardContainerOwner(PPCRegister& r3);
+
 extern bool Skate3GuardContainerListHeader(PPCRegister& r3, PPCRegister& r31);
 
 DEFINE_REX_FUNC(sub_82B43318) {
@@ -32017,6 +32019,11 @@ DEFINE_REX_FUNC(sub_82B43318) {
 	PPCRegister temp{};
 	uint32_t ea{};
 	// mflr r12
+	if (Skate3GuardContainerOwner(ctx.r3)) {
+		return;
+	}
+	else {
+	}
 	ctx.r12.u64 = ctx.lr;
 	// stw r12,-8(r1)
 	REX_STORE_U32(ctx.r1.u32 + -8, ctx.r12.u32);
@@ -32114,10 +32121,19 @@ loc_82B433A4:
 	return;
 }
 
+extern bool Skate3GuardContainerOwner(PPCRegister& r3);
+
+extern bool Skate3GuardContainerListHeader(PPCRegister& r3, PPCRegister& r31);
+
 DEFINE_REX_FUNC(sub_82B433C0) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
 	// mflr r12
+	if (Skate3GuardContainerOwner(ctx.r3)) {
+		return;
+	}
+	else {
+	}
 	ctx.r12.u64 = ctx.lr;
 	// stw r12,-8(r1)
 	REX_STORE_U32(ctx.r1.u32 + -8, ctx.r12.u32);
@@ -32137,6 +32153,11 @@ DEFINE_REX_FUNC(sub_82B433C0) {
 	ctx.lr = 0x82B433E0;
 	sub_82B461D0(ctx, base);
 	// lhz r11,4(r31)
+	if (Skate3GuardContainerListHeader(ctx.r3, ctx.r31)) {
+		goto loc_82B43438;
+	}
+	else {
+	}
 	ctx.r11.u64 = REX_LOAD_U16(ctx.r31.u32 + 4);
 	// mr r4,r3
 	ctx.r4.u64 = ctx.r3.u64;

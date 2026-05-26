@@ -35984,6 +35984,8 @@ loc_82D279BC:
 	return;
 }
 
+extern bool Skate3GuardFrontendQueuePush(PPCRegister& r3, PPCRegister& r11);
+
 DEFINE_REX_FUNC(sub_82D27A18) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
@@ -36024,6 +36026,11 @@ loc_82D27A40:
 	// cmplwi cr6,r11,0
 	ctx.cr6.compare<uint32_t>(ctx.r11.u32, 0, ctx.xer);
 	// stw r10,4(r3)
+	if (Skate3GuardFrontendQueuePush(ctx.r3, ctx.r11)) {
+		goto loc_82D27A80;
+	}
+	else {
+	}
 	REX_STORE_U32(ctx.r3.u32 + 4, ctx.r10.u32);
 	// beq cr6,0x82d27a80
 	if (ctx.cr6.eq) goto loc_82D27A80;

@@ -42094,6 +42094,17 @@ DEFINE_REX_FUNC(sub_8280EDC0) {
 	return;
 }
 
+DEFINE_REX_FUNC(sub_8280EDE0) {
+	REX_FUNC_PROLOGUE();
+	PPCRegister temp{};
+	// stfs f1,40(r3)
+	ctx.fpscr.disableFlushMode();
+	temp.f32 = float(ctx.f1.f64);
+	REX_STORE_U32(ctx.r3.u32 + 40, temp.u32);
+	// blr 
+	return;
+}
+
 DEFINE_REX_FUNC(sub_8280EDE8) {
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};

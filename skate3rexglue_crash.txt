@@ -1,0 +1,5 @@
+Exception: 0xC0000005
+Address: 0x7FF67B20C5F1
+ModuleBase: 0x7FF67A820000
+ModuleOffset: 0x9EC5F1
+----------

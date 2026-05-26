@@ -17701,6 +17701,7 @@ void skate3rexglue_RegisterFunctions(rex::runtime::IModuleRegistrar* registrar) 
   registrar->SetFunction(0x8280ECE8, sub_8280ECE8);
   registrar->SetFunction(0x8280ED70, sub_8280ED70);
   registrar->SetFunction(0x8280EDC0, sub_8280EDC0);
+  registrar->SetFunction(0x8280EDE0, sub_8280EDE0);
   registrar->SetFunction(0x8280EDE8, sub_8280EDE8);
   registrar->SetFunction(0x8280EDF0, sub_8280EDF0);
   registrar->SetFunction(0x8280EDF8, sub_8280EDF8);

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <filesystem>
+#include <rex/system/flags.h>
 #include <rex/rex_app.h>
 #include <rex/filesystem.h>
 
@@ -25,6 +26,11 @@ class Skate3rexglueApp : public rex::ReXApp {
   // void OnPostSetup() override {}
   // void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {}
   // void OnShutdown() override {}
+  void OnPreSetup(rex::RuntimeConfig& config) override {
+    (void)config;
+    REXCVAR_SET(protect_zero, false);
+  }
+
   void OnConfigurePaths(rex::PathConfig& paths) override {
     if (!paths.game_data_root.empty()) {
       return;
@@ -45,12 +51,12 @@ class Skate3rexglueApp : public rex::ReXApp {
     };
 
     for (const auto& candidate : candidates) {
-      if (std::filesystem::is_directory(candidate / "default.xex")) {
-        paths.game_data_root = candidate;
-        return;
-      }
-      if (std::filesystem::is_regular_file(candidate / "default.xex")) {
-        paths.game_data_root = candidate;
+      std::error_code ec;
+      if (std::filesystem::is_regular_file(candidate / "default.xex", ec)) {
+        paths.game_data_root = std::filesystem::weakly_canonical(candidate, ec);
+        if (ec) {
+          paths.game_data_root = std::filesystem::absolute(candidate);
+        }
         return;
       }
     }

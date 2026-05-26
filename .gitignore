@@ -25,11 +25,13 @@
 
 # User-provided assets
 /game/
+/game_nointro/
 *.iso
 
 # Launcher cache
 /cache/
 /skate3_recomp.config.json
+/skate3_launcher_launch.txt
 
 # Crash dumps
 *.dmp

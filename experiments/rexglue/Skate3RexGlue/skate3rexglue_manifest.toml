@@ -26,6 +26,7 @@ includes = []
 "0x82E48608" = { end = 0x82E48640 }
 "0x82E48640" = { end = 0x82E48678 }
 "0x82E57610" = { end = 0x82E57628 }
+"0x8280EDE0" = { end = 0x8280EDE8 }
 
 [[entrypoint.midasm_hook]]
 address = 0x828EC69C
@@ -151,6 +152,24 @@ after_instruction = true
 jump_address_on_true = 0x828EB0B4
 
 [[entrypoint.midasm_hook]]
+address = 0x828EB0E4
+name = "Skate3GuardValueStringArgument"
+registers = ["r11"]
+jump_address_on_true = 0x828EB138
+
+[[entrypoint.midasm_hook]]
+address = 0x828EB32C
+name = "Skate3GuardValueStringArgument"
+registers = ["r11"]
+jump_address_on_true = 0x828EB384
+
+[[entrypoint.midasm_hook]]
+address = 0x828EC634
+name = "Skate3GuardValueStringArgument"
+registers = ["r11"]
+jump_address_on_true = 0x828EC7AC
+
+[[entrypoint.midasm_hook]]
 address = 0x828FD840
 name = "Skate3GuardStartupValueSlot"
 registers = ["r31", "r11"]
@@ -191,6 +210,138 @@ registers = ["r31"]
 jump_address_on_true = 0x828ED014
 
 [[entrypoint.midasm_hook]]
+address = 0x828ED294
+name = "Skate3GuardValueWriterCursor"
+registers = ["r31"]
+jump_address_on_true = 0x828ED2CC
+
+[[entrypoint.midasm_hook]]
+address = 0x828EB12C
+name = "Skate3GuardValueWriterCursor"
+registers = ["r31"]
+jump_address_on_true = 0x828EB138
+
+[[entrypoint.midasm_hook]]
+address = 0x828ECFD0
+name = "Skate3GuardValueWriterOutput"
+registers = ["r30"]
+jump_address_on_true = 0x828ED014
+
+[[entrypoint.midasm_hook]]
+address = 0x828ECFA8
+name = "Skate3GuardValueStringScan"
+registers = ["r4", "r11"]
+jump_address_on_true = 0x828ED014
+
+[[entrypoint.midasm_hook]]
+address = 0x828F2288
+name = "Skate3GuardValueStackRoot"
+registers = ["r25"]
+jump_address_on_true = 0x828F2440
+
+[[entrypoint.midasm_hook]]
+address = 0x828F2298
+name = "Skate3GuardValueStackSlice"
+registers = ["r24"]
+jump_address_on_true = 0x828F2440
+
+[[entrypoint.midasm_hook]]
+address = 0x828ED2C0
+name = "Skate3GuardValueFormatResult"
+registers = ["r3", "r31", "r6"]
+jump_address_on_true = 0x828ED2CC
+
+[[entrypoint.midasm_hook]]
+address = 0x828EE5EC
+name = "Skate3GuardValueObjectSwap"
+registers = ["r30", "r31"]
+jump_address_on_true = 0x828EE680
+
+[[entrypoint.midasm_hook]]
+address = 0x828EE6D4
+name = "Skate3GuardValueOwnerFormat"
+registers = ["r31"]
+jump_address_on_true = 0x828EE76C
+
+[[entrypoint.midasm_hook]]
+address = 0x828EE734
+name = "Skate3GuardValueNestedFormatter"
+registers = ["r11"]
+jump_address_on_true = 0x828EE764
+
+[[entrypoint.midasm_hook]]
+address = 0x8293F2D8
+name = "Skate3GuardFramePumpCallback"
+registers = ["r3"]
+jump_address_on_true = 0x8293F348
+
+[[entrypoint.midasm_hook]]
+address = 0x82D73160
+name = "Skate3GuardFrontendOwnerState"
+registers = ["r31"]
+jump_address_on_true = 0x82D731E8
+
+[[entrypoint.midasm_hook]]
+address = 0x8253A4A4
+name = "Skate3GuardCareerWidgetLink"
+registers = ["r1", "r12", "r14", "r15", "r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23", "r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82BA7940
+name = "Skate3GuardWidgetAttach"
+registers = ["r29", "r30"]
+jump_address_on_true = 0x82BA7A8C
+
+[[entrypoint.midasm_hook]]
+address = 0x82BA7938
+name = "Skate3GuardWidgetAttachGrow"
+registers = ["r29", "r30"]
+jump_address_on_true = 0x82BA7A8C
+
+[[entrypoint.midasm_hook]]
+address = 0x82D73368
+name = "Skate3GuardFrontendCleanupNode"
+registers = ["r29", "r30", "r31"]
+jump_address_on_true = 0x82D73390
+
+[[entrypoint.midasm_hook]]
+address = 0x82D761E8
+name = "Skate3GuardFrontendClearNode"
+registers = ["r30", "r31"]
+jump_address_on_true = 0x82D76214
+
+[[entrypoint.midasm_hook]]
+address = 0x8273A3F0
+name = "Skate3GuardVectorInsertWordSlot"
+registers = ["r29", "r30", "r31"]
+jump_address_on_true = 0x8273A404
+
+[[entrypoint.midasm_hook]]
+address = 0x8273A444
+name = "Skate3GuardVectorGrowWordSlot"
+registers = ["r29", "r11"]
+jump_address_on_true = 0x8273A448
+
+[[entrypoint.midasm_hook]]
+address = 0x82D27A58
+name = "Skate3GuardFrontendQueuePush"
+registers = ["r3", "r11"]
+jump_address_on_true = 0x82D27A80
+
+[[entrypoint.midasm_hook]]
+address = 0x82D73240
+name = "Skate3GuardFrontendSetupWriter"
+registers = ["r31"]
+jump_address_on_true = 0x82D7333C
+
+[[entrypoint.midasm_hook]]
+address = 0x82D73244
+name = "Skate3GuardFrontendSetupWriter"
+registers = ["r31"]
+jump_address_on_true = 0x82D7333C
+
+[[entrypoint.midasm_hook]]
 address = 0x82F22E70
 name = "Skate3GuardSearchStringByte"
 registers = ["r3", "r6"]
@@ -209,10 +360,106 @@ registers = ["r3", "r6"]
 return_on_true = true
 
 [[entrypoint.midasm_hook]]
+address = 0x82A5A1C0
+name = "Skate3GuardFileHeaderProbe"
+registers = ["r3"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82A4F6B0
+name = "Skate3GuardResourceTableRoot"
+registers = ["r3"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82B571D8
+name = "Skate3GuardStreamNodeInit"
+registers = ["r3", "r4"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82A50014
+name = "Skate3GuardAllocatedStreamChunk"
+registers = ["r30"]
+jump_address_on_true = 0x82A500E0
+
+[[entrypoint.midasm_hook]]
+address = 0x82A50238
+name = "Skate3GuardAllocatedStreamChunkReturn"
+registers = ["r30", "r3", "r29"]
+jump_address_on_true = 0x82A503B4
+
+[[entrypoint.midasm_hook]]
+address = 0x82AC0430
+name = "Skate3GuardMemcpyRange"
+registers = ["r3", "r4", "r5"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82AC5010
+name = "Skate3GuardMemcpyRange"
+registers = ["r3", "r4", "r5"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82F23010
+name = "Skate3GuardMemcpyRange"
+registers = ["r3", "r4", "r5"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82B56C88
+name = "Skate3GuardPatchLinkStore"
+registers = ["r31"]
+jump_address_on_true = 0x82B56CE0
+
+[[entrypoint.midasm_hook]]
+address = 0x82B56CF8
+name = "Skate3GuardPatchTableDescriptor"
+registers = ["r29"]
+jump_address_on_true = 0x82B56E0C
+
+[[entrypoint.midasm_hook]]
+address = 0x82B5C6A0
+name = "Skate3GuardResourceUpdateRoot"
+registers = ["r30"]
+jump_address_on_true = 0x82B5CFA4
+
+[[entrypoint.midasm_hook]]
+address = 0x82B5C8D0
+name = "Skate3GuardActivePatchHeaders"
+registers = ["r25", "r27"]
+jump_address_on_true = 0x82B5CFA4
+
+[[entrypoint.midasm_hook]]
+address = 0x828B2720
+name = "Skate3GuardContainerOwnerList"
+registers = ["r3"]
+jump_address_on_true = 0x828B28DC
+
+[[entrypoint.midasm_hook]]
+address = 0x82B43318
+name = "Skate3GuardContainerOwner"
+registers = ["r3"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
 address = 0x82B43338
 name = "Skate3GuardContainerListHeader"
 registers = ["r3", "r31"]
 jump_address_on_true = 0x82B433A4
+
+[[entrypoint.midasm_hook]]
+address = 0x82B433C0
+name = "Skate3GuardContainerOwner"
+registers = ["r3"]
+return_on_true = true
+
+[[entrypoint.midasm_hook]]
+address = 0x82B433E0
+name = "Skate3GuardContainerListHeader"
+registers = ["r3", "r31"]
+jump_address_on_true = 0x82B43438
 
 [[entrypoint.midasm_hook]]
 address = 0x828F07BC
@@ -252,3 +499,8 @@ name = "Skate3GuardDrawCommandWrite"
 registers = ["r11"]
 after_instruction = true
 jump_address_on_true = 0x8247EAB8
+
+[[entrypoint.midasm_hook]]
+address = 0x82F272E8
+name = "Skate3SkipStartupBugCheck"
+jump_address_on_true = 0x82F272EC

@@ -43417,6 +43417,10 @@ loc_8273A33C:
 	return;
 }
 
+extern bool Skate3GuardVectorInsertWordSlot(PPCRegister& r29, PPCRegister& r30, PPCRegister& r31);
+
+extern bool Skate3GuardVectorGrowWordSlot(PPCRegister& r29, PPCRegister& r11);
+
 DEFINE_REX_FUNC(sub_8273A380) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
@@ -43484,6 +43488,11 @@ loc_8273A3CC:
 	// lwz r8,0(r29)
 	ctx.r8.u64 = REX_LOAD_U32(ctx.r29.u32 + 0);
 	// stw r8,0(r30)
+	if (Skate3GuardVectorInsertWordSlot(ctx.r29, ctx.r30, ctx.r31)) {
+		goto loc_8273A404;
+	}
+	else {
+	}
 	REX_STORE_U32(ctx.r30.u32 + 0, ctx.r8.u32);
 	// lwz r11,4(r31)
 	ctx.r11.u64 = REX_LOAD_U32(ctx.r31.u32 + 4);
@@ -43493,6 +43502,7 @@ loc_8273A3CC:
 	REX_STORE_U32(ctx.r31.u32 + 4, ctx.r7.u32);
 	// addi r1,r1,128
 	ctx.r1.s64 = ctx.r1.s64 + 128;
+loc_8273A404:
 	// b 0x82f27514
 	__restgprlr_27(ctx, base);
 	return;
@@ -43534,6 +43544,11 @@ loc_8273A420:
 	// lwz r10,0(r29)
 	ctx.r10.u64 = REX_LOAD_U32(ctx.r29.u32 + 0);
 	// stw r10,0(r11)
+	if (Skate3GuardVectorGrowWordSlot(ctx.r29, ctx.r11)) {
+		goto loc_8273A448;
+	}
+	else {
+	}
 	REX_STORE_U32(ctx.r11.u32 + 0, ctx.r10.u32);
 loc_8273A448:
 	// lwz r10,4(r31)

@@ -13650,6 +13650,8 @@ loc_82D73094:
 	return;
 }
 
+extern bool Skate3GuardFrontendOwnerState(PPCRegister& r31);
+
 DEFINE_REX_FUNC(sub_82D730F0) {
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
@@ -13717,6 +13719,11 @@ DEFINE_REX_FUNC(sub_82D730F0) {
 	ctx.lr = 0x82D73160;
 	sub_82D731F0(ctx, base);
 	// lwz r10,8292(r31)
+	if (Skate3GuardFrontendOwnerState(ctx.r31)) {
+		goto loc_82D731E8;
+	}
+	else {
+	}
 	ctx.r10.u64 = REX_LOAD_U32(ctx.r31.u32 + 8292);
 	// lwz r11,8296(r31)
 	ctx.r11.u64 = REX_LOAD_U32(ctx.r31.u32 + 8296);
@@ -13799,6 +13806,10 @@ loc_82D731E8:
 	return;
 }
 
+extern bool Skate3GuardFrontendSetupWriter(PPCRegister& r31);
+
+extern bool Skate3GuardFrontendSetupWriter(PPCRegister& r31);
+
 DEFINE_REX_FUNC(sub_82D731F0) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
@@ -13848,9 +13859,19 @@ DEFINE_REX_FUNC(sub_82D731F0) {
 	// addi r29,r11,18592
 	ctx.r29.s64 = ctx.r11.s64 + 18592;
 	// bl 0x828eb0c0
+	if (Skate3GuardFrontendSetupWriter(ctx.r31)) {
+		goto loc_82D7333C;
+	}
+	else {
+	}
 	ctx.lr = 0x82D73244;
 	sub_828EB0C0(ctx, base);
 	// lwz r3,8276(r31)
+	if (Skate3GuardFrontendSetupWriter(ctx.r31)) {
+		goto loc_82D7333C;
+	}
+	else {
+	}
 	ctx.r3.u64 = REX_LOAD_U32(ctx.r31.u32 + 8276);
 	// mr r4,r30
 	ctx.r4.u64 = ctx.r30.u64;
@@ -13985,12 +14006,15 @@ DEFINE_REX_FUNC(sub_82D731F0) {
 	// bl 0x828eb8a8
 	ctx.lr = 0x82D7333C;
 	sub_828EB8A8(ctx, base);
+loc_82D7333C:
 	// addi r1,r1,128
 	ctx.r1.s64 = ctx.r1.s64 + 128;
 	// b 0x82f27518
 	__restgprlr_28(ctx, base);
 	return;
 }
+
+extern bool Skate3GuardFrontendCleanupNode(PPCRegister& r29, PPCRegister& r30, PPCRegister& r31);
 
 DEFINE_REX_FUNC(sub_82D73348) {
 	REX_FUNC_PROLOGUE();
@@ -14016,6 +14040,11 @@ DEFINE_REX_FUNC(sub_82D73348) {
 	if (ctx.cr6.eq) goto loc_82D73390;
 loc_82D73368:
 	// lwz r3,8732(r29)
+	if (Skate3GuardFrontendCleanupNode(ctx.r29, ctx.r30, ctx.r31)) {
+		goto loc_82D73390;
+	}
+	else {
+	}
 	ctx.r3.u64 = REX_LOAD_U32(ctx.r29.u32 + 8732);
 	// li r5,0
 	ctx.r5.s64 = 0;
@@ -20815,6 +20844,8 @@ loc_82D761A8:
 	return;
 }
 
+extern bool Skate3GuardFrontendClearNode(PPCRegister& r30, PPCRegister& r31);
+
 DEFINE_REX_FUNC(sub_82D761B0) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
@@ -20851,6 +20882,11 @@ loc_82D761DC:
 	// li r5,12
 	ctx.r5.s64 = 12;
 	// lwz r31,0(r31)
+	if (Skate3GuardFrontendClearNode(ctx.r30, ctx.r31)) {
+		goto loc_82D76214;
+	}
+	else {
+	}
 	ctx.r31.u64 = REX_LOAD_U32(ctx.r31.u32 + 0);
 	// lwz r10,4(r10)
 	ctx.r10.u64 = REX_LOAD_U32(ctx.r10.u32 + 4);

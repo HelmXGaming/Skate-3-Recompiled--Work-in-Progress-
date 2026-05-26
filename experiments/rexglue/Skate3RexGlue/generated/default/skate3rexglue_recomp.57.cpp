@@ -11123,10 +11123,17 @@ DEFINE_REX_FUNC(sub_82A4F630) {
 	return;
 }
 
+extern bool Skate3GuardResourceTableRoot(PPCRegister& r3);
+
 DEFINE_REX_FUNC(sub_82A4F6B0) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
 	// mflr r12
+	if (Skate3GuardResourceTableRoot(ctx.r3)) {
+		return;
+	}
+	else {
+	}
 	ctx.r12.u64 = ctx.lr;
 	// bl 0x82f274b4
 	ctx.lr = 0x82A4F6B8;
@@ -12279,6 +12286,8 @@ DEFINE_REX_FUNC(sub_82A4FE68) {
 	return;
 }
 
+extern bool Skate3GuardAllocatedStreamChunk(PPCRegister& r30);
+
 DEFINE_REX_FUNC(sub_82A4FED0) {
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
@@ -12460,6 +12469,11 @@ loc_82A4FFD8:
 	// li r10,5
 	ctx.r10.s64 = 5;
 	// lwz r9,4(r30)
+	if (Skate3GuardAllocatedStreamChunk(ctx.r30)) {
+		goto loc_82A500E0;
+	}
+	else {
+	}
 	ctx.r9.u64 = REX_LOAD_U32(ctx.r30.u32 + 4);
 	// addi r11,r25,-4
 	ctx.r11.s64 = ctx.r25.s64 + -4;
@@ -12570,6 +12584,7 @@ loc_82A50048:
 	// bctrl 
 	ctx.lr = 0x82A500E0;
 	REX_CALL_INDIRECT_FUNC(ctx.ctr.u32);
+loc_82A500E0:
 	// mr r3,r25
 	ctx.r3.u64 = ctx.r25.u64;
 	// addi r1,r1,304
@@ -12578,6 +12593,8 @@ loc_82A50048:
 	__restgprlr_24(ctx, base);
 	return;
 }
+
+extern bool Skate3GuardAllocatedStreamChunkReturn(PPCRegister& r30, PPCRegister& r3, PPCRegister& r29);
 
 DEFINE_REX_FUNC(sub_82A500F0) {
 	REX_FUNC_PROLOGUE();
@@ -12762,6 +12779,11 @@ loc_82A501FC:
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// lwz r11,4(r30)
+	if (Skate3GuardAllocatedStreamChunkReturn(ctx.r30, ctx.r3, ctx.r29)) {
+		goto loc_82A503B4;
+	}
+	else {
+	}
 	ctx.r11.u64 = REX_LOAD_U32(ctx.r30.u32 + 4);
 	// addi r4,r1,96
 	ctx.r4.s64 = ctx.r1.s64 + 96;
@@ -12966,6 +12988,7 @@ loc_82A5039C:
 	ctx.r3.u64 = ctx.r29.u64;
 	// stw r22,40(r29)
 	REX_STORE_U32(ctx.r29.u32 + 40, ctx.r22.u32);
+loc_82A503B4:
 	// addi r1,r1,336
 	ctx.r1.s64 = ctx.r1.s64 + 336;
 	// b 0x82f274fc
@@ -35674,9 +35697,16 @@ loc_82A5A1A8:
 	return;
 }
 
+extern bool Skate3GuardFileHeaderProbe(PPCRegister& r3);
+
 DEFINE_REX_FUNC(sub_82A5A1C0) {
 	REX_FUNC_PROLOGUE();
 	// lhz r10,0(r3)
+	if (Skate3GuardFileHeaderProbe(ctx.r3)) {
+		return;
+	}
+	else {
+	}
 	ctx.r10.u64 = REX_LOAD_U16(ctx.r3.u32 + 0);
 	// mr r11,r3
 	ctx.r11.u64 = ctx.r3.u64;

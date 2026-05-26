@@ -6287,6 +6287,10 @@ loc_82B56C40:
 	return;
 }
 
+extern bool Skate3GuardPatchLinkStore(PPCRegister& r31);
+
+extern bool Skate3GuardPatchTableDescriptor(PPCRegister& r29);
+
 DEFINE_REX_FUNC(sub_82B56C48) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
@@ -6327,6 +6331,11 @@ loc_82B56C70:
 	// beq cr6,0x82b56c90
 	if (ctx.cr6.eq) goto loc_82B56C90;
 	// stw r11,8(r31)
+	if (Skate3GuardPatchLinkStore(ctx.r31)) {
+		goto loc_82B56CE0;
+	}
+	else {
+	}
 	REX_STORE_U32(ctx.r31.u32 + 8, ctx.r11.u32);
 	// b 0x82b56ce0
 	goto loc_82B56CE0;
@@ -6388,6 +6397,11 @@ loc_82B56CE0:
 	// beq cr6,0x82b56e0c
 	if (ctx.cr6.eq) goto loc_82B56E0C;
 	// addic. r11,r29,872
+	if (Skate3GuardPatchTableDescriptor(ctx.r29)) {
+		goto loc_82B56E0C;
+	}
+	else {
+	}
 	ctx.xer.ca = ctx.r29.u32 > 4294966423;
 	ctx.r11.s64 = ctx.r29.s64 + 872;
 	ctx.cr0.compare<int32_t>(ctx.r11.s32, 0, ctx.xer);
@@ -7110,11 +7124,18 @@ loc_82B571CC:
 	return;
 }
 
+extern bool Skate3GuardStreamNodeInit(PPCRegister& r3, PPCRegister& r4);
+
 DEFINE_REX_FUNC(sub_82B571D8) {
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
 	uint32_t ea{};
 	// mflr r12
+	if (Skate3GuardStreamNodeInit(ctx.r3, ctx.r4)) {
+		return;
+	}
+	else {
+	}
 	ctx.r12.u64 = ctx.lr;
 	// stw r12,-8(r1)
 	REX_STORE_U32(ctx.r1.u32 + -8, ctx.r12.u32);
@@ -19518,6 +19539,10 @@ loc_82B5C638:
 	return;
 }
 
+extern bool Skate3GuardResourceUpdateRoot(PPCRegister& r30);
+
+extern bool Skate3GuardActivePatchHeaders(PPCRegister& r25, PPCRegister& r27);
+
 DEFINE_REX_FUNC(sub_82B5C640) {
 	REX_FUNC_PROLOGUE();
 	PPCRegister temp{};
@@ -19576,6 +19601,11 @@ loc_82B5C68C:
 	// beq cr6,0x82b5cfa4
 	if (ctx.cr6.eq) goto loc_82B5CFA4;
 	// lwz r11,896(r30)
+	if (Skate3GuardResourceUpdateRoot(ctx.r30)) {
+		goto loc_82B5CFA4;
+	}
+	else {
+	}
 	ctx.r11.u64 = REX_LOAD_U32(ctx.r30.u32 + 896);
 	// lis r10,-16383
 	ctx.r10.s64 = -1073676288;
@@ -19889,6 +19919,11 @@ loc_82B5C82C:
 	REX_STORE_U32(ctx.r31.u32 + 10372, ctx.r11.u32);
 loc_82B5C8D0:
 	// lis r10,-31993
+	if (Skate3GuardActivePatchHeaders(ctx.r25, ctx.r27)) {
+		goto loc_82B5CFA4;
+	}
+	else {
+	}
 	ctx.r10.s64 = -2096693248;
 	// lwz r7,20(r27)
 	ctx.r7.u64 = REX_LOAD_U32(ctx.r27.u32 + 20);

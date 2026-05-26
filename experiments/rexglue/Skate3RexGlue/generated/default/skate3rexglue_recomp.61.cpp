@@ -26324,10 +26324,17 @@ loc_82AC041C:
 	return;
 }
 
+extern bool Skate3GuardMemcpyRange(PPCRegister& r3, PPCRegister& r4, PPCRegister& r5);
+
 DEFINE_REX_FUNC(sub_82AC0430) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
 	// add r10,r3,r5
+	if (Skate3GuardMemcpyRange(ctx.r3, ctx.r4, ctx.r5)) {
+		return;
+	}
+	else {
+	}
 	ctx.r10.u64 = ctx.r3.u64 + ctx.r5.u64;
 	// cmplw cr6,r10,r4
 	ctx.cr6.compare<uint32_t>(ctx.r10.u32, ctx.r4.u32, ctx.xer);
@@ -37596,10 +37603,17 @@ loc_82AC4FF8:
 	goto loc_82AC4FB4;
 }
 
+extern bool Skate3GuardMemcpyRange(PPCRegister& r3, PPCRegister& r4, PPCRegister& r5);
+
 DEFINE_REX_FUNC(sub_82AC5010) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
 	// mr r10,r3
+	if (Skate3GuardMemcpyRange(ctx.r3, ctx.r4, ctx.r5)) {
+		return;
+	}
+	else {
+	}
 	ctx.r10.u64 = ctx.r3.u64;
 	// mr r11,r4
 	ctx.r11.u64 = ctx.r4.u64;

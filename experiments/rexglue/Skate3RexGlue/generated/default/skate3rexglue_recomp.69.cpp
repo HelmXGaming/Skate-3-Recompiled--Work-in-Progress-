@@ -58036,6 +58036,10 @@ loc_82BA78C4:
 	return;
 }
 
+extern bool Skate3GuardWidgetAttachGrow(PPCRegister& r29, PPCRegister& r30);
+
+extern bool Skate3GuardWidgetAttach(PPCRegister& r29, PPCRegister& r30);
+
 DEFINE_REX_FUNC(sub_82BA78F0) {
 	REX_FUNC_PROLOGUE();
 	uint32_t ea{};
@@ -58080,12 +58084,22 @@ DEFINE_REX_FUNC(sub_82BA78F0) {
 	goto loc_82BA7940;
 loc_82BA7938:
 	// addi r5,r1,80
+	if (Skate3GuardWidgetAttachGrow(ctx.r29, ctx.r30)) {
+		goto loc_82BA7A8C;
+	}
+	else {
+	}
 	ctx.r5.s64 = ctx.r1.s64 + 80;
 	// bl 0x8273a380
 	ctx.lr = 0x82BA7940;
 	sub_8273A380(ctx, base);
 loc_82BA7940:
 	// lis r11,1
+	if (Skate3GuardWidgetAttach(ctx.r29, ctx.r30)) {
+		goto loc_82BA7A8C;
+	}
+	else {
+	}
 	ctx.r11.s64 = 65536;
 	// stw r29,4(r30)
 	REX_STORE_U32(ctx.r30.u32 + 4, ctx.r29.u32);
